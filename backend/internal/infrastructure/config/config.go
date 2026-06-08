@@ -10,8 +10,46 @@ type Config struct {
 	Server          ServerConfig
 	JWT             JWTConfig
 	GCS             GCSConfig
+	Country         string
 	DefaultIVARate  float64
 	LatePenaltyRate float64
+}
+
+// CountryInfo holds the deployment-country localization metadata that the
+// frontend consumes via the public /config endpoint.
+type CountryInfo struct {
+	Country         string  `json:"country"`
+	Currency        string  `json:"currency"`
+	Locale          string  `json:"locale"`
+	NationalIDLabel string  `json:"nationalIdLabel"`
+	TaxIDLabel      string  `json:"taxIdLabel"`
+	IVARate         float64 `json:"ivaRate"`
+}
+
+// countryDefaults maps a country code to its localization defaults.
+var countryDefaults = map[string]struct {
+	Currency        string
+	Locale          string
+	TimeZone        string
+	NationalIDLabel string
+	TaxIDLabel      string
+	IVARate         float64
+}{
+	"AR": {Currency: "ARS", Locale: "es-AR", TimeZone: "America/Argentina/Buenos_Aires", NationalIDLabel: "DNI", TaxIDLabel: "CUIT", IVARate: 21},
+	"CO": {Currency: "COP", Locale: "es-CO", TimeZone: "America/Bogota", NationalIDLabel: "Cédula", TaxIDLabel: "NIT", IVARate: 19},
+}
+
+// CountryInfo returns the localization metadata for the configured country.
+func (c *Config) CountryInfo() CountryInfo {
+	d := countryDefaults[c.Country]
+	return CountryInfo{
+		Country:         c.Country,
+		Currency:        d.Currency,
+		Locale:          d.Locale,
+		NationalIDLabel: d.NationalIDLabel,
+		TaxIDLabel:      d.TaxIDLabel,
+		IVARate:         c.DefaultIVARate,
+	}
 }
 
 type DBConfig struct {
@@ -22,6 +60,7 @@ type DBConfig struct {
 	Name     string
 	SSLMode  string
 	Instance string
+	TimeZone string
 }
 
 func (c DBConfig) DSN() string {
@@ -29,13 +68,17 @@ func (c DBConfig) DSN() string {
 	if sslMode == "" {
 		sslMode = "disable"
 	}
+	tz := c.TimeZone
+	if tz == "" {
+		tz = "America/Argentina/Buenos_Aires"
+	}
 	dsn := "host=" + c.Host +
 		" user=" + c.User +
 		" password=" + c.Password +
 		" dbname=" + c.Name +
 		" port=" + c.Port +
 		" sslmode=" + sslMode +
-		" TimeZone=America/Argentina/Buenos_Aires"
+		" TimeZone=" + tz
 	return dsn
 }
 
@@ -56,6 +99,14 @@ type GCSConfig struct {
 }
 
 func Load() *Config {
+	country := getEnv("COUNTRY", "AR")
+	defaults, ok := countryDefaults[country]
+	if !ok {
+		// Unknown country falls back to Argentina defaults.
+		country = "AR"
+		defaults = countryDefaults["AR"]
+	}
+
 	return &Config{
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -65,6 +116,7 @@ func Load() *Config {
 			Name:     getEnv("DB_NAME", "creditos"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 			Instance: getEnv("DB_INSTANCE", ""),
+			TimeZone: defaults.TimeZone,
 		},
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),
@@ -79,7 +131,8 @@ func Load() *Config {
 			CredentialsFile: getEnv("GCS_CREDENTIALS_FILE", ""),
 			LocalPath:       getEnv("LOCAL_STORAGE_PATH", "./storage"),
 		},
-		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", 21),
+		Country:         country,
+		DefaultIVARate:  getEnvFloat("DEFAULT_IVA_RATE", defaults.IVARate),
 		LatePenaltyRate: getEnvFloat("LATE_PENALTY_RATE", 10),
 	}
 }

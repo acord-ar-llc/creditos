@@ -38,7 +38,7 @@ func TestNewVendor(t *testing.T) {
 			cuit:         "12345",
 			phone:        "3564123456",
 			wantErr:      true,
-			errMsg:       "invalid CUIT",
+			errMsg:       "invalid tax ID",
 		},
 		{
 			name:         "empty phone",
@@ -52,7 +52,7 @@ func TestNewVendor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			vendor, err := model.NewVendor(uuid.New(), tt.businessName, tt.cuit, tt.phone, "Av. Siempreviva 742", "Villanueva", "Córdoba", "Argentina")
+			vendor, err := model.NewVendor(uuid.New(), tt.businessName, tt.cuit, tt.phone, "Av. Siempreviva 742", "Villanueva", "Córdoba", "Argentina", "AR")
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -70,7 +70,7 @@ func TestNewVendor(t *testing.T) {
 }
 
 func TestVendor_ActivateDeactivate(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "addr", "city", "prov", "Argentina")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "addr", "city", "prov", "Argentina", "AR")
 	require.NoError(t, err)
 	assert.True(t, vendor.IsActive)
 
@@ -82,7 +82,7 @@ func TestVendor_ActivateDeactivate(t *testing.T) {
 }
 
 func TestVendor_UpdateProfile(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina", "AR")
 	require.NoError(t, err)
 
 	vendor.UpdateProfile("999", "new addr", "new city", "new prov", "Chile")
@@ -93,7 +93,7 @@ func TestVendor_UpdateProfile(t *testing.T) {
 }
 
 func TestVendor_UpdateProfile_PartialUpdate(t *testing.T) {
-	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina")
+	vendor, err := model.NewVendor(uuid.New(), "Test", "20-12345678-6", "123", "old addr", "old city", "old prov", "Argentina", "AR")
 	require.NoError(t, err)
 
 	vendor.UpdateProfile("999", "", "", "", "")

@@ -12,7 +12,7 @@ export const translations: Record<Lang, Record<string, string>> = {
   es: {
     // Meta
     'meta.title': 'Prestia — Plataforma de gestión de microcréditos',
-    'meta.description': 'Prestia - Plataforma de gestión integral de microcréditos para financieras, cooperativas y empresas de crédito en Latinoamérica',
+    'meta.description': 'Prestia - Plataforma de gestión integral de microcréditos para financieras, cooperativas y empresas de crédito en Argentina y Colombia',
 
     // Nav
     'nav.whatIs': 'Qué es',
@@ -26,7 +26,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Hero
     'hero.badge': 'Software de gestión financiera',
     'hero.title': 'La plataforma integral para administrar tu operación de microcréditos',
-    'hero.description': 'Gestioná clientes, líneas de crédito, préstamos, cobranzas y una red de comercios adheridos desde un solo lugar. Diseñado para financieras, cooperativas y empresas de crédito en toda Latinoamérica.',
+    'hero.description': 'Gestioná clientes, líneas de crédito, préstamos, cobranzas y una red de comercios adheridos desde un solo lugar. Diseñado para financieras, cooperativas y empresas de crédito en Argentina y Colombia.',
     'hero.cta': 'Solicitar una demo',
     'hero.secondaryCta': 'Ver funcionalidades',
     'hero.stat1Value': '3 roles',
@@ -40,7 +40,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // What is
     'whatIs.title': 'Qué es Prestia',
     'whatIs.lead': 'Es un <strong>sistema completo de gestión de microcréditos</strong> que digitaliza toda la operación de una financiera: desde el alta de clientes y la aprobación de líneas de crédito, hasta el desembolso de préstamos, la cobranza de cuotas y la gestión de comercios adheridos.',
-    'whatIs.p2': 'Pensado para todos los mercados de Latinoamérica, soporta identificación fiscal local (CUIT/DNI, RUC, RFC, etc.), múltiples medios de pago (efectivo, transferencia, MercadoPago), sistemas de amortización francés y alemán, y genera un registro de auditoría completo de cada operación.',
+    'whatIs.p2': 'Pensado para Argentina y Colombia, soporta la identificación fiscal local de cada país (DNI/CUIT en Argentina, Cédula/NIT en Colombia), múltiples medios de pago (efectivo, transferencia, MercadoPago), sistemas de amortización francés y alemán, y genera un registro de auditoría completo de cada operación.',
     'whatIs.p3': 'El sistema tiene tres portales integrados:',
     'whatIs.portal1': '<strong>Portal Administrativo</strong> — Gestión completa de la cartera, aprobación de créditos, KPIs y auditoría.',
     'whatIs.portal2': '<strong>Portal del Cliente</strong> — Consulta de cuenta corriente, cuotas, pagos e historial.',
@@ -192,14 +192,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     'cta.imageAlt': 'Equipo planificando',
 
     // Footer
-    'footer.tagline': 'Sistema de gestión de microcréditos para Latinoamérica.',
+    'footer.tagline': 'Sistema de gestión de microcréditos para Argentina y Colombia.',
     'footer.copyright': '© 2026 Prestia. Todos los derechos reservados.',
   },
 
   en: {
     // Meta
     'meta.title': 'Prestia — Microcredit Management Platform',
-    'meta.description': 'Prestia - Comprehensive microcredit management platform for financial institutions, cooperatives and credit companies in Latin America',
+    'meta.description': 'Prestia - Comprehensive microcredit management platform for financial institutions, cooperatives and credit companies in Argentina and Colombia',
 
     // Nav
     'nav.whatIs': 'What is it',
@@ -213,7 +213,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Hero
     'hero.badge': 'Financial management software',
     'hero.title': 'The comprehensive platform to manage your microcredit operations',
-    'hero.description': 'Manage clients, credit lines, loans, collections and a network of affiliated merchants from a single place. Designed for financial institutions, cooperatives and credit companies across Latin America.',
+    'hero.description': 'Manage clients, credit lines, loans, collections and a network of affiliated merchants from a single place. Designed for financial institutions, cooperatives and credit companies in Argentina and Colombia.',
     'hero.cta': 'Request a demo',
     'hero.secondaryCta': 'See features',
     'hero.stat1Value': '3 roles',
@@ -227,7 +227,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // What is
     'whatIs.title': 'What is Prestia',
     'whatIs.lead': 'It is a <strong>complete microcredit management system</strong> that digitizes the entire operation of a financial institution: from client onboarding and credit line approval, to loan disbursement, installment collection and affiliated merchant management.',
-    'whatIs.p2': 'Designed for all Latin American markets, it supports local tax identification (CUIT/DNI, RUC, RFC, etc.), multiple payment methods (cash, wire transfer, MercadoPago), French and German amortization systems, and generates a complete audit trail for every operation.',
+    'whatIs.p2': 'Designed for Argentina and Colombia, it supports each country\'s local tax identification (DNI/CUIT in Argentina, Cédula/NIT in Colombia), multiple payment methods (cash, wire transfer, MercadoPago), French and German amortization systems, and generates a complete audit trail for every operation.',
     'whatIs.p3': 'The system has three integrated portals:',
     'whatIs.portal1': '<strong>Admin Portal</strong> — Complete portfolio management, credit approval, KPIs and audit trail.',
     'whatIs.portal2': '<strong>Client Portal</strong> — Current account inquiry, installments, payments and history.',
@@ -379,14 +379,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     'cta.imageAlt': 'Team planning',
 
     // Footer
-    'footer.tagline': 'Microcredit management system for Latin America.',
+    'footer.tagline': 'Microcredit management system for Argentina and Colombia.',
     'footer.copyright': '© 2026 Prestia. All rights reserved.',
   },
 
   pt: {
     // Meta
     'meta.title': 'Prestia — Plataforma de gestão de microcrédito',
-    'meta.description': 'Prestia - Plataforma integral de gestão de microcrédito para financeiras, cooperativas e empresas de crédito na América Latina',
+    'meta.description': 'Prestia - Plataforma integral de gestão de microcrédito para financeiras, cooperativas e empresas de crédito na Argentina e Colômbia',
 
     // Nav
     'nav.whatIs': 'O que é',
@@ -400,7 +400,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Hero
     'hero.badge': 'Software de gestão financeira',
     'hero.title': 'A plataforma integral para administrar sua operação de microcrédito',
-    'hero.description': 'Gerencie clientes, linhas de crédito, empréstimos, cobranças e uma rede de comércios afiliados em um só lugar. Projetado para financeiras, cooperativas e empresas de crédito em toda a América Latina.',
+    'hero.description': 'Gerencie clientes, linhas de crédito, empréstimos, cobranças e uma rede de comércios afiliados em um só lugar. Projetado para financeiras, cooperativas e empresas de crédito na Argentina e Colômbia.',
     'hero.cta': 'Solicitar uma demo',
     'hero.secondaryCta': 'Ver funcionalidades',
     'hero.stat1Value': '3 papéis',
@@ -414,7 +414,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // What is
     'whatIs.title': 'O que é Prestia',
     'whatIs.lead': 'É um <strong>sistema completo de gestão de microcrédito</strong> que digitaliza toda a operação de uma financeira: desde o cadastro de clientes e a aprovação de linhas de crédito, até o desembolso de empréstimos, a cobrança de parcelas e a gestão de comércios afiliados.',
-    'whatIs.p2': 'Pensado para todos os mercados da América Latina, suporta identificação fiscal local (CUIT/DNI, RUC, RFC, CPF/CNPJ, etc.), múltiplos meios de pagamento (dinheiro, transferência, MercadoPago), sistemas de amortização francês e alemão, e gera um registro de auditoria completo de cada operação.',
+    'whatIs.p2': 'Pensado para Argentina e Colômbia, suporta a identificação fiscal local de cada país (DNI/CUIT na Argentina, Cédula/NIT na Colômbia), múltiplos meios de pagamento (dinheiro, transferência, MercadoPago), sistemas de amortização francês e alemão, e gera um registro de auditoria completo de cada operação.',
     'whatIs.p3': 'O sistema tem três portais integrados:',
     'whatIs.portal1': '<strong>Portal Administrativo</strong> — Gestão completa da carteira, aprovação de créditos, KPIs e auditoria.',
     'whatIs.portal2': '<strong>Portal do Cliente</strong> — Consulta de conta corrente, parcelas, pagamentos e histórico.',
@@ -566,7 +566,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'cta.imageAlt': 'Equipe planejando',
 
     // Footer
-    'footer.tagline': 'Sistema de gestão de microcrédito para a América Latina.',
+    'footer.tagline': 'Sistema de gestão de microcrédito para Argentina e Colômbia.',
     'footer.copyright': '© 2026 Prestia. Todos os direitos reservados.',
   },
 };

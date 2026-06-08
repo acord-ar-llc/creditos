@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { getCountryConfig, type CountryConfig } from "../config/countryConfig";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -39,6 +40,7 @@ import type {
   RecordVendorPaymentRequest,
   RegisterClientByVendorRequest,
   RequestCreditLineByVendorRequest,
+  AdminUpdateClientRequest,
   UpdateCreditLineRequest,
   WithdrawalRequest,
   CreateWithdrawalRequest,
@@ -46,6 +48,7 @@ import type {
   RejectWithdrawalRequest,
   FinancialReport,
   PortfolioPositionReport,
+  OverdueInstallment,
 } from "./types";
 
 // ==================== Auth ====================
@@ -152,6 +155,11 @@ export const adminGetClients = async (page = 1, pageSize = 20): Promise<Paginate
 
 export const adminGetClient = async (id: string): Promise<Client> => {
   const res = await apiClient.get(`/admin/clients/${id}`);
+  return res.data;
+};
+
+export const adminUpdateClient = async (clientId: string, data: AdminUpdateClientRequest): Promise<Client> => {
+  const res = await apiClient.put(`/admin/clients/${clientId}`, data);
   return res.data;
 };
 
@@ -290,7 +298,15 @@ export const getDashboard = async (): Promise<PortfolioSummary> => {
 
 export const getDelinquency = async (): Promise<DelinquencySummary> => {
   const res = await apiClient.get("/admin/dashboard/delinquency");
-  return res.data;
+  const d = res.data;
+  return {
+    delinquencyRate: parseFloat(d.delinquencyRate) || 0,
+    overdueCount: d.overdueCount || 0,
+    totalOverdue: parseFloat(d.totalOverdue) || 0,
+    par30: parseFloat(d.par30) || 0,
+    par60: parseFloat(d.par60) || 0,
+    par90: parseFloat(d.par90) || 0,
+  };
 };
 
 export const getKPIs = async (): Promise<KPIs> => {
@@ -312,7 +328,7 @@ export const getKPIs = async (): Promise<KPIs> => {
 export const getDisbursementTrends = async (): Promise<TrendData[]> => {
   const res = await apiClient.get("/admin/dashboard/trends/disbursements");
   return (res.data || []).map((d: { date: string; amount: string; count: number }) => ({
-    month: new Date(d.date).toLocaleDateString("es-AR", { month: "short", year: "2-digit" }),
+    month: new Date(d.date).toLocaleDateString(getCountryConfig().locale, { month: "short", year: "2-digit" }),
     amount: parseFloat(d.amount) || 0,
     count: d.count,
   }));
@@ -321,7 +337,7 @@ export const getDisbursementTrends = async (): Promise<TrendData[]> => {
 export const getCollectionTrends = async (): Promise<TrendData[]> => {
   const res = await apiClient.get("/admin/dashboard/trends/collections");
   return (res.data || []).map((d: { date: string; amount: string; count: number }) => ({
-    month: new Date(d.date).toLocaleDateString("es-AR", { month: "short", year: "2-digit" }),
+    month: new Date(d.date).toLocaleDateString(getCountryConfig().locale, { month: "short", year: "2-digit" }),
     amount: parseFloat(d.amount) || 0,
     count: d.count,
   }));
@@ -486,5 +502,34 @@ export const getPortfolioPosition = async (from?: string, to?: string): Promise<
 
 export const getAuditLogs = async (page = 1, pageSize = 20): Promise<PaginatedResponse<AuditEntry>> => {
   const res = await apiClient.get("/admin/audit", { params: { offset: (page - 1) * pageSize, limit: pageSize } });
+  return res.data;
+};
+
+// ==================== Deployment config (public) ====================
+
+export const getDeploymentConfig = async (): Promise<CountryConfig> => {
+  const res = await apiClient.get("/config");
+  return res.data;
+};
+
+// ==================== Admin: Client block/unblock ====================
+
+export const adminBlockClient = async (clientId: string): Promise<void> => {
+  await apiClient.post(`/admin/clients/${clientId}/block`);
+};
+
+export const adminUnblockClient = async (clientId: string): Promise<void> => {
+  await apiClient.post(`/admin/clients/${clientId}/unblock`);
+};
+
+// ==================== Admin: Collections ====================
+
+export const adminGetOverdueInstallments = async (
+  page = 1,
+  pageSize = 20
+): Promise<PaginatedResponse<OverdueInstallment>> => {
+  const res = await apiClient.get("/admin/collections/overdue", {
+    params: { offset: (page - 1) * pageSize, limit: pageSize },
+  });
   return res.data;
 };

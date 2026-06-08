@@ -9,6 +9,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/auth"
+	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/handler"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/http/gin/middleware"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/messaging"
@@ -27,18 +28,22 @@ type Router struct {
 	db              *gorm.DB
 	defaultIVARate  float64
 	latePenaltyRate decimal.Decimal
+	country         string
+	countryInfo     config.CountryInfo
 }
 
-func NewRouter(db *gorm.DB, jwtSecret string, defaultIVARate float64, latePenaltyRate float64) *Router {
+func NewRouter(db *gorm.DB, cfg *config.Config) *Router {
 	r := &Router{
 		engine:          gin.Default(),
 		db:              db,
-		defaultIVARate:  defaultIVARate,
-		latePenaltyRate: decimal.NewFromFloat(latePenaltyRate),
+		defaultIVARate:  cfg.DefaultIVARate,
+		latePenaltyRate: decimal.NewFromFloat(cfg.LatePenaltyRate),
+		country:         cfg.Country,
+		countryInfo:     cfg.CountryInfo(),
 	}
 	r.engine.Use(middleware.CORS())
 	r.engine.Use(middleware.AuditContext())
-	r.setupRoutes(jwtSecret)
+	r.setupRoutes(cfg.JWT.Secret)
 	return r
 }
 
@@ -73,13 +78,13 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Application services
 	auditService := service.NewAuditService(auditLogRepo)
-	clientService := service.NewClientService(userRepo, clientRepo, accountRepo, authService, auditService)
+	clientService := service.NewClientService(userRepo, clientRepo, accountRepo, authService, auditService, r.country)
 	creditService := service.NewCreditService(creditLineRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, clientRepo, paymentRepo)
 	paymentService := service.NewPaymentService(paymentRepo, loanRepo, installmentRepo, accountRepo, movementRepo, auditService, r.latePenaltyRate)
 	accountService := service.NewAccountService(accountRepo, movementRepo)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	_ = service.NewPDFAppService(pdfGenerator, localStorage, loanRepo, clientRepo, paymentRepo)
-	vendorService := service.NewVendorService(userRepo, vendorRepo, vendorAccountRepo, authService, auditService)
+	vendorService := service.NewVendorService(userRepo, vendorRepo, vendorAccountRepo, authService, auditService, r.country)
 	purchaseService := service.NewPurchaseService(purchaseRepo, vendorRepo, vendorAccountRepo, vendorMovementRepo, clientRepo, creditService, auditService)
 	vendorPaymentService := service.NewVendorPaymentService(vendorPaymentRepo, vendorAccountRepo, vendorMovementRepo, vendorRepo, auditService)
 	otpService := service.NewOTPService(otpRepo, userRepo, otpSender, auditService)
@@ -93,6 +98,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Handlers
 	healthHandler := handler.NewHealthHandler(r.db)
+	configHandler := handler.NewConfigHandler(r.countryInfo)
 	authHandler := handler.NewAuthHandler(clientService, userRepo, authService, otpService, firebaseVerifier)
 	clientHandler := handler.NewClientHandler(clientService, creditService, paymentService, purchaseRepo, accountRepo, movementRepo)
 	accountHandler := handler.NewAccountHandler(accountService, clientRepo)
@@ -117,6 +123,9 @@ func (r *Router) setupRoutes(jwtSecret string) {
 	base.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := base.Group("/api/v1")
+
+	// Public deployment config (country, currency, locale, identity labels)
+	api.GET("/config", configHandler.GetConfig)
 
 	// Auth (public)
 	api.POST("/auth/register", authHandler.Register)
@@ -175,6 +184,7 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.GET("/clients", clientHandler.ListClients)
 		adminRoutes.GET("/clients/search", clientHandler.ListClients)
 		adminRoutes.GET("/clients/:id", clientHandler.GetClient)
+		adminRoutes.PUT("/clients/:id", clientHandler.AdminUpdateClient)
 		adminRoutes.PUT("/clients/:id/iva-rate", clientHandler.UpdateIVARate)
 		adminRoutes.PUT("/clients/:id/comments", clientHandler.UpdateComments)
 		adminRoutes.POST("/clients/:id/block", clientHandler.BlockClient)
@@ -209,6 +219,8 @@ func (r *Router) setupRoutes(jwtSecret string) {
 		adminRoutes.GET("/dashboard/kpis", dashboardHandler.GetKPIs)
 		adminRoutes.GET("/dashboard/trends/disbursements", dashboardHandler.GetDisbursementTrend)
 		adminRoutes.GET("/dashboard/trends/collections", dashboardHandler.GetCollectionTrend)
+
+		adminRoutes.GET("/collections/overdue", dashboardHandler.GetOverdueInstallments)
 
 		adminRoutes.GET("/reports/financial", reportHandler.GetFinancialReport)
 		adminRoutes.GET("/reports/portfolio", reportHandler.GetPortfolioPosition)

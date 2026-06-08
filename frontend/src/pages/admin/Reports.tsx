@@ -25,11 +25,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getFinancialReport, getPortfolioPosition } from "../../api/endpoints";
 import KPICard from "../../components/KPICard";
+import { formatMoney } from "../../config/countryConfig";
 
-const fmt = (v: string) => {
-  const n = parseFloat(v) || 0;
-  return n.toLocaleString("es-AR", { style: "currency", currency: "ARS" });
-};
+const fmt = (v: string) => formatMoney(v);
 
 const Reports: React.FC = () => {
   const { t } = useTranslation();

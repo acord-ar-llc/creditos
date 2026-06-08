@@ -24,6 +24,7 @@ import ClientDetailAdmin from "./pages/admin/ClientDetail";
 import LoanManagement from "./pages/admin/LoanManagement";
 
 import AuditLog from "./pages/admin/AuditLog";
+import Collections from "./pages/admin/Collections";
 import Reports from "./pages/admin/Reports";
 import VendorListAdmin from "./pages/admin/VendorList";
 import VendorDetailAdmin from "./pages/admin/VendorDetail";
@@ -144,6 +145,11 @@ const App: React.FC = () => {
 <Route path="/admin/loans" element={
         <ProtectedRoute requiredRole="admin">
           <AppLayout><LoanManagement /></AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/collections" element={
+        <ProtectedRoute requiredRole="admin">
+          <AppLayout><Collections /></AppLayout>
         </ProtectedRoute>
       } />
       <Route path="/admin/reports" element={

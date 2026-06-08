@@ -104,6 +104,7 @@
     "loanManagement": "Gestión de préstamos",
     "paymentAdjustment": "Ajuste de pagos",
     "auditLog": "Auditoría",
+    "collections": "Cobranzas",
     "settings": "Configuración",
     "vendorDashboard": "Panel",
     "newPurchase": "Nueva venta",
@@ -125,6 +126,7 @@
     "totalCollected": "Total cobrado",
     "pendingApprovals": "Aprobaciones pendientes",
     "delinquencyRate": "Tasa de morosidad",
+    "delinquency": "Morosidad",
     "collectionRate": "Tasa de cobranza",
     "averageLoanAmount": "Monto promedio",
     "portfolioSummary": "Resumen del portafolio",
@@ -136,6 +138,16 @@
     "par30": "Cartera >30 días",
     "par60": "Cartera >60 días",
     "par90": "Cartera >90 días"
+  },
+  "collections": {
+    "title": "Cobranzas",
+    "subtitle": "Cuotas vencidas pendientes de cobro",
+    "client": "Cliente",
+    "installment": "Cuota",
+    "dueDate": "Vencimiento",
+    "daysOverdue": "Días de atraso",
+    "amountDue": "Monto pendiente",
+    "noOverdue": "No hay cuotas vencidas."
   },
   "account": {
     "title": "Mi cuenta",
@@ -356,7 +368,10 @@
     "receiptDownloadError": "Error al descargar el comprobante",
     "executeCancellation": "Cancelar crédito",
     "loanCancelled": "Crédito cancelado exitosamente",
-    "cancelError": "Error al cancelar el crédito"
+    "cancelError": "Error al cancelar el crédito",
+    "editClient": "Editar cliente",
+    "clientUpdated": "Datos del cliente actualizados",
+    "clientUpdateError": "Error al actualizar datos del cliente"
   },
   "profile": {
     "title": "Mi perfil",

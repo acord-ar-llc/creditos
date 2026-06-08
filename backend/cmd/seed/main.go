@@ -9,6 +9,7 @@ import (
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/config"
 	"github.com/diogenes-moreira/creditos/backend/internal/infrastructure/persistence/postgres"
+	"github.com/diogenes-moreira/creditos/backend/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/shopspring/decimal"
@@ -44,53 +45,113 @@ func main() {
 		log.Fatalf("Failed to migrate: %v", err)
 	}
 
-	log.Println("Seeding database...")
-	seedAdmins(db)
-	clients := seedClients(db, 50)
+	log.Printf("Seeding database for country %s...", cfg.Country)
+	seedAdmins(db, cfg.Country)
+	clients := seedClients(db, 50, cfg.Country)
 	creditLines := seedCreditLines(db, clients, 30)
 	loans := seedLoans(db, clients, creditLines, 40, cfg.DefaultIVARate)
 	seedPayments(db, loans)
 	log.Println("Seed completed successfully!")
 }
 
-func seedAdmins(db *gorm.DB) {
+func seedAdmins(db *gorm.DB, country string) {
+	tld := "com.ar"
+	phonePrefix := "+5491140510"
+	if country == "CO" {
+		tld = "com.co"
+		phonePrefix = "+5713000010"
+	}
 	admins := []struct{ email, name, phone string }{
-		{"admin@prestia.com.ar", "Admin Principal", "+5491140510100"},
-		{"supervisor@prestia.com.ar", "Supervisor", "+5491140510101"},
-		{"diogenes.moreira@gmail.com", "Diogenes Moreira", "+541140510104"},
+		{fmt.Sprintf("admin@prestia.%s", tld), "Admin Principal", phonePrefix + "100"},
+		{fmt.Sprintf("supervisor@prestia.%s", tld), "Supervisor", phonePrefix + "101"},
 	}
 	for _, a := range admins {
-		user := &model.User{
-			ID:          uuid.New(),
-			FirebaseUID: uuid.New().String(),
-			Email:       a.email,
-			Phone:       a.phone,
-			Role:        model.RoleAdmin,
-			IsActive:    true,
-		}
-		if err := db.FirstOrCreate(user, "email = ?", a.email).Error; err != nil {
-			log.Printf("Admin %s: %v", a.email, err)
+		var existing model.User
+		if err := db.Where("email = ?", a.email).First(&existing).Error; err == nil {
+			// User exists — ensure admin role and active
+			existing.Role = model.RoleAdmin
+			existing.IsActive = true
+			existing.Phone = a.phone
+			if err := db.Save(&existing).Error; err != nil {
+				log.Printf("Admin update %s: %v", a.email, err)
+			} else {
+				log.Printf("Admin updated: %s (ID: %s, role: %s)", a.email, existing.ID, existing.Role)
+			}
 		} else {
-			log.Printf("Admin created: %s (ID: %s)", a.email, user.ID)
+			user := &model.User{
+				ID:          uuid.New(),
+				FirebaseUID: uuid.New().String(),
+				Email:       a.email,
+				Phone:       a.phone,
+				Role:        model.RoleAdmin,
+				IsActive:    true,
+			}
+			if err := db.Create(user).Error; err != nil {
+				log.Printf("Admin create %s: %v", a.email, err)
+			} else {
+				log.Printf("Admin created: %s (ID: %s)", a.email, user.ID)
+			}
 		}
 	}
 }
 
-var (
-	firstNames = []string{"Juan", "María", "Carlos", "Ana", "Luis", "Laura", "Pedro", "Sofía", "Diego", "Valentina", "Martín", "Camila", "Jorge", "Lucía", "Fernando", "Paula", "Ricardo", "Florencia", "Alejandro", "Julieta", "Roberto", "Daniela", "Sebastián", "Agustina", "Gabriel", "Antonella"}
-	lastNames  = []string{"González", "Rodríguez", "López", "Martínez", "García", "Fernández", "Pérez", "Sánchez", "Romero", "Torres", "Díaz", "Álvarez", "Ruiz", "Ramírez", "Flores", "Acosta", "Medina", "Herrera", "Suárez", "Castro", "Morales", "Ortiz", "Gutiérrez", "Silva", "Rojas", "Vega"}
-	provinces  = []string{"Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán", "Entre Ríos", "Salta", "Misiones", "Chaco", "Corrientes"}
-	cities     = []string{"Villanueva", "San Fernando", "Moreno", "Merlo", "Quilmes", "La Plata", "Tigre", "Pilar", "Campana", "Zárate"}
-)
+type countryDataset struct {
+	countryName string
+	phonePrefix string
+	firstNames  []string
+	lastNames   []string
+	provinces   []string
+	cities      []string
+}
 
-func seedClients(db *gorm.DB, count int) []model.Client {
+var datasets = map[string]countryDataset{
+	"AR": {
+		countryName: "Argentina",
+		phonePrefix: "+5411",
+		firstNames:  []string{"Juan", "María", "Carlos", "Ana", "Luis", "Laura", "Pedro", "Sofía", "Diego", "Valentina", "Martín", "Camila", "Jorge", "Lucía", "Fernando", "Paula", "Ricardo", "Florencia", "Alejandro", "Julieta", "Roberto", "Daniela", "Sebastián", "Agustina", "Gabriel", "Antonella"},
+		lastNames:   []string{"González", "Rodríguez", "López", "Martínez", "García", "Fernández", "Pérez", "Sánchez", "Romero", "Torres", "Díaz", "Álvarez", "Ruiz", "Ramírez", "Flores", "Acosta", "Medina", "Herrera", "Suárez", "Castro", "Morales", "Ortiz", "Gutiérrez", "Silva", "Rojas", "Vega"},
+		provinces:   []string{"Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán", "Entre Ríos", "Salta", "Misiones", "Chaco", "Corrientes"},
+		cities:      []string{"Villanueva", "San Fernando", "Moreno", "Merlo", "Quilmes", "La Plata", "Tigre", "Pilar", "Campana", "Zárate"},
+	},
+	"CO": {
+		countryName: "Colombia",
+		phonePrefix: "+57300",
+		firstNames:  []string{"Santiago", "Sofía", "Mateo", "Isabella", "Sebastián", "Valentina", "Andrés", "Camila", "Juan", "Mariana", "Carlos", "Daniela", "Felipe", "Valeria", "David", "Sara", "Nicolás", "Laura", "Samuel", "Gabriela", "Esteban", "Manuela", "Tomás", "Antonia", "Emanuel", "Salomé"},
+		lastNames:   []string{"Rodríguez", "Gómez", "González", "Martínez", "García", "López", "Hernández", "Ramírez", "Muñoz", "Rojas", "Moreno", "Jiménez", "Gutiérrez", "Vargas", "Castro", "Ortiz", "Ramos", "Suárez", "Rincón", "Cardona", "Cardenas", "Quintero", "Pineda", "Mejía", "Restrepo", "Ospina"},
+		provinces:   []string{"Cundinamarca", "Antioquia", "Valle del Cauca", "Atlántico", "Santander", "Bolívar", "Caldas", "Risaralda", "Tolima", "Boyacá"},
+		cities:      []string{"Bogotá", "Medellín", "Cali", "Barranquilla", "Bucaramanga", "Cartagena", "Manizales", "Pereira", "Ibagué", "Tunja"},
+	},
+}
+
+// genIdentity returns a (nationalID, taxID) pair valid for the given country.
+func genIdentity(country string) (string, string) {
+	if country == "CO" {
+		cedula := fmt.Sprintf("%d", 1000000000+rand.Intn(100000000))
+		base := fmt.Sprintf("%09d", 800000000+rand.Intn(199999999))
+		dv := validator.CalculateNITCheckDigit(base)
+		return cedula, fmt.Sprintf("%s%d", base, dv)
+	}
+	dniNum := 20000000 + rand.Intn(30000000)
+	prefix := "20"
+	if rand.Intn(2) == 0 {
+		prefix = "27"
+	}
+	cuitBase := prefix + fmt.Sprintf("%08d", dniNum)
+	return fmt.Sprintf("%d", dniNum), fmt.Sprintf("%s%d", cuitBase, calculateCUITCheckDigit(cuitBase))
+}
+
+func seedClients(db *gorm.DB, count int, country string) []model.Client {
+	ds, ok := datasets[country]
+	if !ok {
+		ds = datasets["AR"]
+	}
 	var clients []model.Client
 	for i := 0; i < count; i++ {
-		fn := firstNames[rand.Intn(len(firstNames))]
-		ln := lastNames[rand.Intn(len(lastNames))]
+		fn := ds.firstNames[rand.Intn(len(ds.firstNames))]
+		ln := ds.lastNames[rand.Intn(len(ds.lastNames))]
 		email := fmt.Sprintf("%s.%s.%d@email.com", fn, ln, i)
 
-		phoneNum := fmt.Sprintf("+5411%d", 40000000+rand.Intn(20000000))
+		phoneNum := fmt.Sprintf("%s%d", ds.phonePrefix, 4000000+rand.Intn(2000000))
 		user := &model.User{
 			ID:          uuid.New(),
 			FirebaseUID: uuid.New().String(),
@@ -101,18 +162,7 @@ func seedClients(db *gorm.DB, count int) []model.Client {
 		}
 		db.Create(user)
 
-		dniNum := 20000000 + rand.Intn(30000000)
-		dniStr := fmt.Sprintf("%d", dniNum)
-
-		// Generate a valid CUIT with correct check digit
-		prefix := "20"
-		if rand.Intn(2) == 0 {
-			prefix = "27"
-		}
-		body := fmt.Sprintf("%08d", dniNum)
-		cuitBase := prefix + body
-		checkDigit := calculateCUITCheckDigit(cuitBase)
-		cuit := fmt.Sprintf("%s%s%d", prefix, body, checkDigit)
+		dniStr, cuit := genIdentity(country)
 
 		age := 22 + rand.Intn(40)
 		dob := time.Now().AddDate(-age, -rand.Intn(12), -rand.Intn(28))
@@ -125,10 +175,11 @@ func seedClients(db *gorm.DB, count int) []model.Client {
 			DNI:         dniStr,
 			CUIT:        cuit,
 			DateOfBirth: dob,
-			Phone:       fmt.Sprintf("11%d", 40000000+rand.Intn(20000000)),
+			Phone:       phoneNum,
 			Address:     fmt.Sprintf("Calle %d #%d", rand.Intn(200)+1, rand.Intn(5000)+100),
-			City:        cities[rand.Intn(len(cities))],
-			Province:    provinces[rand.Intn(len(provinces))],
+			City:        ds.cities[rand.Intn(len(ds.cities))],
+			Province:    ds.provinces[rand.Intn(len(ds.provinces))],
+			Country:     ds.countryName,
 			IsPEP:       rand.Intn(20) == 0,
 		}
 		db.Create(&client)

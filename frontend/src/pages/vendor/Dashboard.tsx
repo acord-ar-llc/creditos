@@ -22,6 +22,7 @@ import {
   getVendorPurchases,
 } from "../../api/endpoints";
 import KPICard from "../../components/KPICard";
+import { formatMoney as fmtMoney } from "../../config/countryConfig";
 
 const VendorDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -49,11 +50,7 @@ const VendorDashboard: React.FC = () => {
   );
   const recentPurchasesCount = purchases.length;
 
-  const formatMoney = (amount: number) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-    }).format(amount);
+  const formatMoney = (amount: number) => fmtMoney(amount);
 
   return (
     <Box>

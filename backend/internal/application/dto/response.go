@@ -175,6 +175,20 @@ type PaginatedResponse struct {
 	Limit      int         `json:"limit"`
 }
 
+// OverdueInstallmentResponse is a collections worklist row.
+type OverdueInstallmentResponse struct {
+	InstallmentID   string `json:"installmentId"`
+	LoanID          string `json:"loanId"`
+	ClientID        string `json:"clientId"`
+	ClientName      string `json:"clientName"`
+	Number          int    `json:"number"`
+	DueDate         string `json:"dueDate"`
+	DaysOverdue     int    `json:"daysOverdue"`
+	TotalAmount     string `json:"totalAmount"`
+	RemainingAmount string `json:"remainingAmount"`
+	Status          string `json:"status"`
+}
+
 type VendorResponse struct {
 	ID           string `json:"id"`
 	BusinessName string `json:"businessName"`

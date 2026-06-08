@@ -270,7 +270,7 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
 
         <div class="module-card">
           <div class="module-img">
-            <img src="/images/module-vendor.jpg" alt={t(lang, 'modules.client.imageAlt')} loading="lazy" />
+            <img src="/images/module-client.jpg" alt={t(lang, 'modules.client.imageAlt')} loading="lazy" />
             <div class="module-img-overlay client"></div>
           </div>
           <div class="module-body">
@@ -294,7 +294,7 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
 
         <div class="module-card">
           <div class="module-img">
-            <img src="/images/module-client.jpg" alt={t(lang, 'modules.vendor.imageAlt')} loading="lazy" />
+            <img src="/images/module-vendor.jpg" alt={t(lang, 'modules.vendor.imageAlt')} loading="lazy" />
             <div class="module-img-overlay vendor"></div>
           </div>
           <div class="module-body">
@@ -490,6 +490,28 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
   </footer>
 </Layout>
 
+<script>
+  // Mobile navigation toggle
+  const btn = document.querySelector('.mobile-menu-btn');
+  const links = document.querySelector('.nav-links');
+  if (btn && links) {
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', () => {
+      const open = links.classList.toggle('open');
+      btn.classList.toggle('active', open);
+      btn.setAttribute('aria-expanded', String(open));
+    });
+    // Close the menu after navigating to a section
+    links.querySelectorAll('a').forEach((a) => {
+      a.addEventListener('click', () => {
+        links.classList.remove('open');
+        btn.classList.remove('active');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+</script>
+
 <style>
   /* Nav */
   .nav {
@@ -499,6 +521,7 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
   .nav-container {
     max-width: 1200px; margin: 0 auto; padding: 1rem 2rem;
     display: flex; justify-content: space-between; align-items: center;
+    position: relative;
   }
   .logo { font-size: 1.4rem; font-weight: 700; color: #1565C0; display: flex; align-items: center; gap: 0.5rem; }
   .logo-img { height: 60px; width: auto; border-radius: 12px; }
@@ -515,6 +538,9 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
     display: block; width: 24px; height: 2px; background: #444;
     margin: 5px 0; transition: 0.3s;
   }
+  .mobile-menu-btn.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .mobile-menu-btn.active span:nth-child(2) { opacity: 0; }
+  .mobile-menu-btn.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
   /* Sections common */
   .section-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
@@ -897,6 +923,14 @@ const techId = lang === 'es' ? 'tecnologia' : lang === 'pt' ? 'tecnologia' : 'te
 
   @media (max-width: 768px) {
     .nav-links { display: none; }
+    .nav-links.open {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 1.25rem;
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
+      padding: 1.5rem; border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    }
+    .nav-links.open .btn-nav { width: 100%; text-align: center; }
     .mobile-menu-btn { display: block; }
     .hero { padding: 7rem 1.5rem 3rem; }
     .hero-grid { grid-template-columns: 1fr; gap: 2rem; }

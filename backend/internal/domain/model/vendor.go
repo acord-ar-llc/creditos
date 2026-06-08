@@ -26,13 +26,15 @@ type Vendor struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
-func NewVendor(userID uuid.UUID, businessName, cuit, phone, address, city, province, country string) (*Vendor, error) {
+// NewVendor creates a vendor, validating the tax ID (cuit) according to the
+// deployment country (idCountry: "AR" uses CUIT, "CO" uses NIT).
+func NewVendor(userID uuid.UUID, businessName, cuit, phone, address, city, province, country, idCountry string) (*Vendor, error) {
 	if businessName == "" {
 		return nil, fmt.Errorf("business name is required")
 	}
 
-	if err := validator.ValidateCUIT(cuit); err != nil {
-		return nil, fmt.Errorf("invalid CUIT: %w", err)
+	if err := validator.ValidateTaxID(cuit, idCountry); err != nil {
+		return nil, fmt.Errorf("invalid tax ID: %w", err)
 	}
 
 	if phone == "" {

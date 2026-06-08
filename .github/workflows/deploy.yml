@@ -65,5 +65,5 @@ jobs:
             --min-instances=0
             --max-instances=3
             --add-cloudsql-instances=prestia:us-central1:prestia-db
-            --set-env-vars=GIN_MODE=release,SERVER_PORT=8080,FRONTEND_DIR=/app/public,BASE_PATH=/demo,FIREBASE_CREDENTIALS_FILE=/secrets/firebase-credentials.json
+            --set-env-vars=^||^GIN_MODE=release||SERVER_PORT=8080||FRONTEND_DIR=/app/public||BASE_PATH=/demo||FIREBASE_CREDENTIALS_FILE=/secrets/firebase-credentials.json||CORS_ORIGINS=https://prestia.web.app,https://prestia.firebaseapp.com
             --set-secrets=DB_HOST=DB_HOST:latest,DB_PORT=DB_PORT:latest,DB_USER=DB_USER:latest,DB_PASSWORD=DB_PASSWORD:latest,DB_NAME=DB_NAME:latest,DB_SSLMODE=DB_SSLMODE:latest,DB_INSTANCE=DB_INSTANCE:latest,JWT_SECRET=JWT_SECRET:latest,/secrets/firebase-credentials.json=FIREBASE_CREDENTIALS:latest

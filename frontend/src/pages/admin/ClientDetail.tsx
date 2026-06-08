@@ -41,6 +41,8 @@ import {
   Cancel as RejectIcon,
   Download as DownloadIcon,
   CalculateOutlined as SimulateIcon,
+  Block as BlockIcon,
+  LockOpen as UnblockIcon,
 } from "@mui/icons-material";
 import {
   BarChart,
@@ -68,12 +70,15 @@ import {
   adminPrepayLoan,
   adminUpdateIVARate,
   adminUpdateClientComments,
+  adminUpdateClient,
   adminApproveCreditLine,
   adminRejectCreditLine,
   adminDownloadPaymentReceipt,
   adminDownloadLoanSchedule,
   adminSimulateCancellation,
   adminCancelLoan,
+  adminBlockClient,
+  adminUnblockClient,
 } from "../../api/endpoints";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
@@ -81,6 +86,7 @@ import DataTable, { Column } from "../../components/DataTable";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
+import { formatMoney as fmtMoney, getCountryConfig } from "../../config/countryConfig";
 import type { Loan, Payment, Purchase, Movement, CreditLine, Installment, CancellationSettlement } from "../../api/types";
 
 const ClientDetail: React.FC = () => {
@@ -132,6 +138,12 @@ const ClientDetail: React.FC = () => {
   // Comments editing
   const [editingComments, setEditingComments] = useState(false);
   const [commentsValue, setCommentsValue] = useState("");
+  // Edit client dialog
+  const [editClientOpen, setEditClientOpen] = useState(false);
+  const [editClientData, setEditClientData] = useState({
+    firstName: "", lastName: "", dni: "", cuit: "", phone: "",
+    address: "", city: "", province: "", country: "", isPEP: false,
+  });
   // Cancellation simulation dialog
   const [simulateLoan, setSimulateLoan] = useState<Loan | null>(null);
   const [simulationData, setSimulationData] = useState<CancellationSettlement | null>(null);
@@ -218,6 +230,48 @@ const ClientDetail: React.FC = () => {
     },
     onError: (err: unknown) => showError(getErrorMessage(err, t("admin.commentsUpdateError"))),
   });
+
+  const blockMutation = useMutation({
+    mutationFn: (block: boolean) =>
+      block ? adminBlockClient(id!) : adminUnblockClient(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client", id] });
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("common.error"))),
+  });
+
+  const handleToggleBlock = () => {
+    if (!client) return;
+    const block = !client.isBlocked;
+    const msg = block ? t("confirm.blockClient") : t("confirm.unblockClient");
+    if (!window.confirm(msg)) return;
+    blockMutation.mutate(block, {
+      onSuccess: () =>
+        showSuccess(block ? t("admin.blockClient") : t("admin.unblockClient")),
+    });
+  };
+
+  const updateClientMutation = useMutation({
+    mutationFn: ({ clientId, data }: { clientId: string; data: typeof editClientData }) =>
+      adminUpdateClient(clientId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-client", id] });
+      setEditClientOpen(false);
+      showSuccess(t("admin.clientUpdated"));
+    },
+    onError: (err: unknown) => showError(getErrorMessage(err, t("admin.clientUpdateError"))),
+  });
+
+  const handleOpenEditClient = () => {
+    if (!client) return;
+    setEditClientData({
+      firstName: client.firstName, lastName: client.lastName,
+      dni: client.dni, cuit: client.cuit, phone: client.phone,
+      address: client.address, city: client.city, province: client.province,
+      country: client.country || "Argentina", isPEP: client.isPEP,
+    });
+    setEditClientOpen(true);
+  };
 
   const handleOpenLoanDialog = (cl: CreditLine, mode: "loan" | "withdrawal") => {
     setLoanCreditLine(cl);
@@ -398,14 +452,14 @@ const ClientDetail: React.FC = () => {
   };
 
   const formatMoney = (amount: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+    fmtMoney(amount, { maximumFractionDigits: 0, minimumFractionDigits: 0 });
 
   // Chart data: aggregate payments by month
   const chartData = useMemo(() => {
     if (!paymentsData?.data) return [];
     const byMonth: Record<string, number> = {};
     paymentsData.data.forEach((p) => {
-      const month = new Date(p.createdAt).toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
+      const month = new Date(p.createdAt).toLocaleDateString(getCountryConfig().locale, { month: "short", year: "2-digit" });
       byMonth[month] = (byMonth[month] || 0) + parseFloat(p.amount);
     });
     return Object.entries(byMonth).map(([month, amount]) => ({ month, pagos: amount }));
@@ -499,7 +553,18 @@ const ClientDetail: React.FC = () => {
         <Typography variant="h4">
           {client.firstName} {client.lastName}
         </Typography>
-        <StatusBadge status={client.isBlocked ? "blocked" : "active"} size="medium" />
+        <Box display="flex" alignItems="center" gap={2}>
+          <StatusBadge status={client.isBlocked ? "blocked" : "active"} size="medium" />
+          <Button
+            variant="outlined"
+            color={client.isBlocked ? "success" : "error"}
+            startIcon={client.isBlocked ? <UnblockIcon /> : <BlockIcon />}
+            onClick={handleToggleBlock}
+            disabled={blockMutation.isPending}
+          >
+            {client.isBlocked ? t("admin.unblockClient") : t("admin.blockClient")}
+          </Button>
+        </Box>
       </Box>
 
       {/* KPI Cards */}
@@ -633,7 +698,12 @@ const ClientDetail: React.FC = () => {
       {/* Personal Info Card */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h6" mb={2}>{t("admin.personalInfo")}</Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6">{t("admin.personalInfo")}</Typography>
+            <Button size="small" startIcon={<EditIcon />} onClick={handleOpenEditClient}>
+              {t("common.edit")}
+            </Button>
+          </Box>
           <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6} md={4}>
@@ -1228,6 +1298,72 @@ const ClientDetail: React.FC = () => {
             {t("loans.downloadSchedule")}
           </Button>
           <Button onClick={() => setDetailDialogOpen(false)}>{t("common.back")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={editClientOpen} onClose={() => setEditClientOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{t("admin.editClient")}</DialogTitle>
+        <DialogContent>
+          <Box mt={1} display="flex" flexDirection="column" gap={2}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label={t("registration.firstName")} value={editClientData.firstName}
+                  onChange={(e) => setEditClientData({ ...editClientData, firstName: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label={t("registration.lastName")} value={editClientData.lastName}
+                  onChange={(e) => setEditClientData({ ...editClientData, lastName: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label="DNI" value={editClientData.dni}
+                  onChange={(e) => setEditClientData({ ...editClientData, dni: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label="CUIT" value={editClientData.cuit}
+                  onChange={(e) => setEditClientData({ ...editClientData, cuit: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label={t("registration.phone")} value={editClientData.phone}
+                  onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })} />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField fullWidth label={t("registration.address")} value={editClientData.address}
+                  onChange={(e) => setEditClientData({ ...editClientData, address: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField fullWidth label={t("registration.city")} value={editClientData.city}
+                  onChange={(e) => setEditClientData({ ...editClientData, city: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField fullWidth label={t("registration.province")} value={editClientData.province}
+                  onChange={(e) => setEditClientData({ ...editClientData, province: e.target.value })} />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField fullWidth label={t("registration.country")} value={editClientData.country}
+                  onChange={(e) => setEditClientData({ ...editClientData, country: e.target.value })} />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Radio checked={editClientData.isPEP}
+                      onClick={() => setEditClientData({ ...editClientData, isPEP: !editClientData.isPEP })} />
+                  }
+                  label={t("registration.isPEP")}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEditClientOpen(false)}>{t("common.cancel")}</Button>
+          <Button
+            variant="contained"
+            disabled={updateClientMutation.isPending}
+            onClick={() => id && updateClientMutation.mutate({ clientId: id, data: editClientData })}
+          >
+            {updateClientMutation.isPending ? t("common.saving") : t("common.save")}
+          </Button>
         </DialogActions>
       </Dialog>
 

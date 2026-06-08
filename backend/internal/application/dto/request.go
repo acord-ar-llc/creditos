@@ -93,6 +93,19 @@ type UpdateCommentsRequest struct {
 	Comments string `json:"comments"`
 }
 
+type AdminUpdateClientRequest struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	DNI       string `json:"dni"`
+	CUIT      string `json:"cuit"`
+	Phone     string `json:"phone"`
+	Address   string `json:"address"`
+	City      string `json:"city"`
+	Province  string `json:"province"`
+	Country   string `json:"country"`
+	IsPEP     bool   `json:"isPEP"`
+}
+
 type SearchClientsRequest struct {
 	Query  string `form:"q"`
 	Offset int    `form:"offset"`

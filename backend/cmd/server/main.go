@@ -63,7 +63,7 @@ func main() {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	router := ginRouter.NewRouter(db, cfg.JWT.Secret, cfg.DefaultIVARate, cfg.LatePenaltyRate)
+	router := ginRouter.NewRouter(db, cfg)
 
 	log.Printf("Starting server on port %s", cfg.Server.Port)
 	if err := router.Engine().Run(":" + cfg.Server.Port); err != nil {

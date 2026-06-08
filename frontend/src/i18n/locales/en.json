@@ -104,6 +104,7 @@
     "loanManagement": "Loan management",
     "paymentAdjustment": "Payment adjustment",
     "auditLog": "Audit log",
+    "collections": "Collections",
     "settings": "Settings",
     "vendorDashboard": "Dashboard",
     "newPurchase": "New Sale",
@@ -125,6 +126,7 @@
     "totalCollected": "Total collected",
     "pendingApprovals": "Pending approvals",
     "delinquencyRate": "Delinquency rate",
+    "delinquency": "Delinquency",
     "collectionRate": "Collection rate",
     "averageLoanAmount": "Average loan amount",
     "portfolioSummary": "Portfolio summary",
@@ -136,6 +138,16 @@
     "par30": "Portfolio >30 days",
     "par60": "Portfolio >60 days",
     "par90": "Portfolio >90 days"
+  },
+  "collections": {
+    "title": "Collections",
+    "subtitle": "Overdue installments pending collection",
+    "client": "Client",
+    "installment": "Installment",
+    "dueDate": "Due date",
+    "daysOverdue": "Days overdue",
+    "amountDue": "Amount due",
+    "noOverdue": "No overdue installments."
   },
   "account": {
     "title": "My account",
@@ -356,7 +368,10 @@
     "receiptDownloadError": "Error downloading receipt",
     "executeCancellation": "Cancel loan",
     "loanCancelled": "Loan cancelled successfully",
-    "cancelError": "Error cancelling loan"
+    "cancelError": "Error cancelling loan",
+    "editClient": "Edit client",
+    "clientUpdated": "Client data updated",
+    "clientUpdateError": "Error updating client data"
   },
   "profile": {
     "title": "My profile",

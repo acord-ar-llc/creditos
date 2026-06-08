@@ -35,6 +35,10 @@ func (s *DashboardService) GetKPIs(ctx context.Context) (*port.PortfolioSummary,
 	return portfolio, delinquency, nil
 }
 
+func (s *DashboardService) GetOverdueInstallments(ctx context.Context, offset, limit int) ([]port.OverdueInstallment, int64, error) {
+	return s.dashRepo.OverdueInstallments(ctx, offset, limit)
+}
+
 func (s *DashboardService) GetDisbursementTrend(ctx context.Context, months int) ([]port.TrendPoint, error) {
 	to := time.Now()
 	from := to.AddDate(0, -months, 0)

@@ -100,6 +100,81 @@ func TestValidateDNI(t *testing.T) {
 	}
 }
 
+func TestValidateCedula(t *testing.T) {
+	tests := []struct {
+		name    string
+		cedula  string
+		wantErr bool
+		errMsg  string
+	}{
+		{name: "valid 10 digit cedula", cedula: "1020304050"},
+		{name: "valid 8 digit cedula", cedula: "12345678"},
+		{name: "valid 6 digit cedula", cedula: "123456"},
+		{name: "valid with dots", cedula: "1.020.304.050"},
+		{name: "too short 5 digits", cedula: "12345", wantErr: true, errMsg: "cedula must have 6 to 10 digits"},
+		{name: "too long 11 digits", cedula: "12345678901", wantErr: true, errMsg: "cedula must have 6 to 10 digits"},
+		{name: "empty string", cedula: "", wantErr: true, errMsg: "cedula must have 6 to 10 digits"},
+		{name: "contains letters", cedula: "10203040A0", wantErr: true, errMsg: "cedula must contain only digits"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validator.ValidateCedula(tt.cedula)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateNIT(t *testing.T) {
+	tests := []struct {
+		name    string
+		nit     string
+		wantErr bool
+		errMsg  string
+	}{
+		{name: "valid NIT with dash", nit: "900123456-8"},
+		{name: "valid NIT without dash", nit: "9001234568"},
+		{name: "valid NIT with dots and dash", nit: "900.123.456-8"},
+		{name: "invalid check digit", nit: "900123456-7", wantErr: true, errMsg: "invalid NIT check digit"},
+		{name: "too short", nit: "12345678", wantErr: true, errMsg: "NIT must have 9 to 16 digits"},
+		{name: "contains letters", nit: "90012345A-8", wantErr: true, errMsg: "NIT must contain only digits"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validator.ValidateNIT(tt.nit)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestCalculateNITCheckDigit(t *testing.T) {
+	// base 900123456 -> DV 8 (DIAN algorithm)
+	assert.Equal(t, 8, validator.CalculateNITCheckDigit("900123456"))
+}
+
+func TestValidateNationalIDAndTaxID_Dispatch(t *testing.T) {
+	// Argentina
+	assert.NoError(t, validator.ValidateNationalID("12345678", validator.CountryAR))
+	assert.NoError(t, validator.ValidateTaxID("20-12345678-6", validator.CountryAR))
+	// Colombia
+	assert.NoError(t, validator.ValidateNationalID("1020304050", validator.CountryCO))
+	assert.NoError(t, validator.ValidateTaxID("900123456-8", validator.CountryCO))
+	// Cross-country mismatch fails
+	assert.Error(t, validator.ValidateTaxID("20-12345678-6", validator.CountryCO))
+	assert.Error(t, validator.ValidateNationalID("1020304050", validator.CountryAR))
+}
+
 func TestFormatCUIT(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -35,6 +35,7 @@ Gavel as GavelIcon,
   ShoppingCart as ShoppingCartIcon,
   Store as StoreIcon,
   Assessment as AssessmentIcon,
+  MoneyOff as CollectionsIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -80,6 +81,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: t("nav.dashboard"), path: "/admin/dashboard", icon: <DashboardIcon /> },
     { label: t("nav.clients"), path: "/admin/clients", icon: <PeopleIcon /> },
 { label: t("nav.loanManagement"), path: "/admin/loans", icon: <GavelIcon /> },
+    { label: t("nav.collections"), path: "/admin/collections", icon: <CollectionsIcon /> },
     { label: t("nav.reports"), path: "/admin/reports", icon: <AssessmentIcon /> },
     { label: t("nav.auditLog"), path: "/admin/audit", icon: <HistoryIcon /> },
     { label: t("nav.vendors"), path: "/admin/vendors", icon: <StoreIcon /> },

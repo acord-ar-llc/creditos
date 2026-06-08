@@ -34,17 +34,19 @@ type Client struct {
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
 }
 
-func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time.Time, phone, address, city, province, country string, isPEP bool) (*Client, error) {
+// NewClient creates a client, validating the national ID (dni) and tax ID (cuit)
+// according to the deployment country (idCountry: "AR" uses DNI/CUIT, "CO" uses Cédula/NIT).
+func NewClient(userID uuid.UUID, firstName, lastName, dni, cuit string, dob time.Time, phone, address, city, province, country string, isPEP bool, idCountry string) (*Client, error) {
 	if firstName == "" || lastName == "" {
 		return nil, fmt.Errorf("first name and last name are required")
 	}
 
-	if err := validator.ValidateDNI(dni); err != nil {
-		return nil, fmt.Errorf("invalid DNI: %w", err)
+	if err := validator.ValidateNationalID(dni, idCountry); err != nil {
+		return nil, fmt.Errorf("invalid national ID: %w", err)
 	}
 
-	if err := validator.ValidateCUIT(cuit); err != nil {
-		return nil, fmt.Errorf("invalid CUIT: %w", err)
+	if err := validator.ValidateTaxID(cuit, idCountry); err != nil {
+		return nil, fmt.Errorf("invalid tax ID: %w", err)
 	}
 
 	if err := validateAge(dob); err != nil {
@@ -126,4 +128,36 @@ func (c *Client) UpdateProfile(phone, address, city, province, country string) {
 
 func (c *Client) SetComments(comments string) {
 	c.Comments = comments
+}
+
+// AdminUpdate updates all editable client fields (admin only).
+func (c *Client) AdminUpdate(firstName, lastName, dni, cuit, phone, address, city, province, country string, isPEP bool) {
+	if firstName != "" {
+		c.FirstName = firstName
+	}
+	if lastName != "" {
+		c.LastName = lastName
+	}
+	if dni != "" {
+		c.DNI = dni
+	}
+	if cuit != "" {
+		c.CUIT = cuit
+	}
+	if phone != "" {
+		c.Phone = phone
+	}
+	if address != "" {
+		c.Address = address
+	}
+	if city != "" {
+		c.City = city
+	}
+	if province != "" {
+		c.Province = province
+	}
+	if country != "" {
+		c.Country = country
+	}
+	c.IsPEP = isPEP
 }

@@ -23,13 +23,14 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import type { Client } from "../../api/types";
 import LocationSelector from "../../components/LocationSelector";
+import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 
 const schema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  dni: z.string().min(7).max(8),
-  cuit: z.string().min(11).max(13),
+  dni: z.string().min(6).max(11),
+  cuit: z.string().min(9).max(16),
   dateOfBirth: z.string().min(1),
   phone: z.string().min(8),
   address: z.string().min(1),
@@ -45,6 +46,7 @@ const ClientRegister: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { showSuccess, showError } = useNotification();
+  const config = useCountryConfig();
   const [registeredClient, setRegisteredClient] = useState<Client | null>(null);
 
   const {
@@ -64,7 +66,7 @@ const ClientRegister: React.FC = () => {
       dateOfBirth: "",
       phone: "",
       address: "",
-      country: "Argentina",
+      country: countryNameFor(config.country),
       city: "",
       province: "",
       isPEP: false,
@@ -213,7 +215,7 @@ const ClientRegister: React.FC = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label={t("registration.dni")}
+                      label={config.nationalIdLabel}
                       error={!!errors.dni}
                       helperText={
                         errors.dni ? t("vendor.dniInvalid") : undefined
@@ -230,7 +232,7 @@ const ClientRegister: React.FC = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label={t("vendor.cuit")}
+                      label={config.taxIdLabel}
                       error={!!errors.cuit}
                       helperText={
                         errors.cuit ? t("vendor.cuitInvalid") : undefined

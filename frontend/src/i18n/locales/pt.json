@@ -102,6 +102,7 @@
     "loanManagement": "Gestão de empréstimos",
     "paymentAdjustment": "Ajuste de pagamentos",
     "auditLog": "Auditoria",
+    "collections": "Cobranças",
     "settings": "Configurações"
   },
   "dashboard": {
@@ -116,6 +117,7 @@
     "totalCollected": "Total arrecadado",
     "pendingApprovals": "Aprovações pendentes",
     "delinquencyRate": "Taxa de inadimplência",
+    "delinquency": "Inadimplência",
     "collectionRate": "Taxa de arrecadação",
     "averageLoanAmount": "Valor médio do empréstimo",
     "portfolioSummary": "Resumo do portfólio",
@@ -127,6 +129,16 @@
     "par30": "Carteira >30 dias",
     "par60": "Carteira >60 dias",
     "par90": "Carteira >90 dias"
+  },
+  "collections": {
+    "title": "Cobranças",
+    "subtitle": "Parcelas vencidas pendentes de cobrança",
+    "client": "Cliente",
+    "installment": "Parcela",
+    "dueDate": "Vencimento",
+    "daysOverdue": "Dias em atraso",
+    "amountDue": "Valor pendente",
+    "noOverdue": "Não há parcelas vencidas."
   },
   "account": {
     "title": "Minha conta",

@@ -7,8 +7,13 @@ interface Props {
   title: string;
   description?: string;
   lang?: Lang;
+  image?: string;
 }
-const { title, description, lang = defaultLang } = Astro.props;
+const { title, description, lang = defaultLang, image = '/images/og-image.jpg' } = Astro.props;
+
+const siteUrl = 'https://prestia.web.app';
+const canonical = `${siteUrl}${getLocalePath(lang)}`;
+const ogImage = `${siteUrl}${image}`;
 
 const firebaseApiKey = import.meta.env.PUBLIC_FIREBASE_API_KEY;
 const firebaseAuthDomain = import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN;
@@ -28,13 +33,46 @@ const alternateLocales = (Object.keys(languages) as Lang[]).filter(l => l !== la
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={metaDesc} />
+    <meta name="theme-color" content="#1565C0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/images/logo.png" />
+    <link rel="canonical" href={canonical} />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="alternate" hreflang={lang} href={`https://prestia.web.app${getLocalePath(lang)}`} />
+    <link rel="alternate" hreflang={lang} href={`${siteUrl}${getLocalePath(lang)}`} />
     {alternateLocales.map(l => (
-      <link rel="alternate" hreflang={l} href={`https://prestia.web.app${getLocalePath(l)}`} />
+      <link rel="alternate" hreflang={l} href={`${siteUrl}${getLocalePath(l)}`} />
     ))}
-    <link rel="alternate" hreflang="x-default" href="https://prestia.web.app/" />
+    <link rel="alternate" hreflang="x-default" href={`${siteUrl}/`} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Prestia" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="723" />
+    <meta property="og:locale" content={lang === 'es' ? 'es_AR' : lang === 'pt' ? 'pt_BR' : 'en_US'} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={metaDesc} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Structured data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'Prestia',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description: metaDesc,
+      url: siteUrl,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    })} />
+
     <title>{title}</title>
   </head>
   <body>

@@ -18,13 +18,17 @@ import { useAuth } from "../../auth/AuthContext";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import LocationSelector from "../../components/LocationSelector";
+import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 
+// Identity length bounds cover both Argentina (DNI 7-8 / CUIT 11) and
+// Colombia (Cédula 6-10 / NIT 9-16). Exact per-country rules are enforced
+// by the backend according to the deployment country.
 const schema = z.object({
   email: z.string().email("Email invalido"),
   firstName: z.string().min(1, "Nombre requerido"),
   lastName: z.string().min(1, "Apellido requerido"),
-  dni: z.string().min(7, "DNI invalido").max(8, "DNI invalido"),
-  cuit: z.string().min(11, "CUIT invalido").max(11, "CUIT invalido"),
+  dni: z.string().min(6, "Documento invalido").max(11, "Documento invalido"),
+  cuit: z.string().min(9, "Identificación fiscal invalida").max(16, "Identificación fiscal invalida"),
   dateOfBirth: z.string().min(1, "Fecha de nacimiento requerida"),
   phone: z.string().min(8, "Telefono invalido"),
   address: z.string().min(1, "Direccion requerida"),
@@ -42,13 +46,14 @@ const Register: React.FC = () => {
   const { register: authRegister } = useAuth();
   const [loading, setLoading] = useState(false);
   const { showError } = useNotification();
+  const config = useCountryConfig();
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       email: "",
       firstName: "", lastName: "", dni: "", cuit: "",
-      dateOfBirth: "", phone: "", address: "", country: "Argentina", city: "", province: "",
+      dateOfBirth: "", phone: "", address: "", country: countryNameFor(config.country), city: "", province: "",
       isPEP: false,
     },
   });
@@ -105,7 +110,7 @@ const Register: React.FC = () => {
               <Grid item xs={12} sm={6}>
                 <Controller name="dni" control={control}
                   render={({ field }) => (
-                    <TextField {...field} fullWidth label={t("registration.dni")} error={!!errors.dni} helperText={errors.dni?.message} />
+                    <TextField {...field} fullWidth label={config.nationalIdLabel} error={!!errors.dni} helperText={errors.dni?.message} />
                   )} />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -117,7 +122,7 @@ const Register: React.FC = () => {
               <Grid item xs={12} sm={6}>
                 <Controller name="cuit" control={control}
                   render={({ field }) => (
-                    <TextField {...field} fullWidth label="CUIT" error={!!errors.cuit} helperText={errors.cuit?.message} />
+                    <TextField {...field} fullWidth label={config.taxIdLabel} error={!!errors.cuit} helperText={errors.cuit?.message} />
                   )} />
               </Grid>
               <Grid item xs={12} sm={6}>

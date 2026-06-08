@@ -22,6 +22,7 @@ import { useAuth } from "../../auth/AuthContext";
 import MoneyDisplay from "../../components/MoneyDisplay";
 import StatusBadge from "../../components/StatusBadge";
 import KPICard from "../../components/KPICard";
+import { formatMoney as fmtMoney } from "../../config/countryConfig";
 
 const ClientDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -41,8 +42,7 @@ const ClientDashboard: React.FC = () => {
   const activeLoans = loans?.filter((l) => l.status === "active" || l.status === "disbursed") || [];
   const totalDebt = activeLoans.reduce((sum, l) => sum + (parseFloat(l.totalRemaining) || 0), 0);
 
-  const formatMoney = (amount: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(amount);
+  const formatMoney = (amount: number) => fmtMoney(amount);
 
   return (
     <Box>

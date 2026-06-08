@@ -25,6 +25,7 @@ import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import type { Client, RegisterRequest } from "../../api/types";
 import LocationSelector from "../../components/LocationSelector";
+import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 
 const emptyForm: RegisterRequest = {
   email: "", firstName: "", lastName: "",
@@ -36,12 +37,13 @@ const ClientList: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const config = useCountryConfig();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [formData, setFormData] = useState<RegisterRequest>({ ...emptyForm });
+  const [formData, setFormData] = useState<RegisterRequest>({ ...emptyForm, country: countryNameFor(config.country) });
   const { showSuccess, showError } = useNotification();
 
   useEffect(() => {
@@ -66,7 +68,7 @@ const ClientList: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       setRegisterOpen(false);
-      setFormData({ ...emptyForm });
+      setFormData({ ...emptyForm, country: countryNameFor(config.country) });
       showSuccess(t("admin.clientCreated"));
     },
     onError: (err: unknown) => showError(getErrorMessage(err, t("admin.clientCreateError"))),
@@ -87,7 +89,7 @@ const ClientList: React.FC = () => {
         </Typography>
       ),
     },
-    { id: "dni", label: "DNI", minWidth: 100 },
+    { id: "dni", label: config.nationalIdLabel, minWidth: 100 },
     { id: "email", label: "Email", minWidth: 180 },
     { id: "phone", label: t("registration.phone"), minWidth: 120 },
     {
@@ -163,8 +165,8 @@ const ClientList: React.FC = () => {
               <TextField label={t("registration.lastName")} value={formData.lastName} onChange={updateField("lastName")} fullWidth />
             </Box>
             <Box display="flex" gap={2}>
-              <TextField label={t("registration.dni")} value={formData.dni} onChange={updateField("dni")} fullWidth />
-              <TextField label={t("registration.cuit")} value={formData.cuit} onChange={updateField("cuit")} fullWidth />
+              <TextField label={config.nationalIdLabel} value={formData.dni} onChange={updateField("dni")} fullWidth />
+              <TextField label={config.taxIdLabel} value={formData.cuit} onChange={updateField("cuit")} fullWidth />
             </Box>
             <TextField label={t("registration.dateOfBirth")} type="date" value={formData.dateOfBirth} onChange={updateField("dateOfBirth")} InputLabelProps={{ shrink: true }} />
             <TextField label={t("registration.phone")} value={formData.phone} onChange={updateField("phone")} />

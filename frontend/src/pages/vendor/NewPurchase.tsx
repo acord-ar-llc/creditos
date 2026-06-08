@@ -35,6 +35,7 @@ import {
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
 import MoneyDisplay from "../../components/MoneyDisplay";
+import { formatMoney as fmtMoney } from "../../config/countryConfig";
 import type { Client, CreditLine } from "../../api/types";
 
 const NewPurchase: React.FC = () => {
@@ -64,11 +65,7 @@ const NewPurchase: React.FC = () => {
   const [numInstallments, setNumInstallments] = useState(1);
   const [amortizationType, setAmortizationType] = useState<"french" | "german">("french");
 
-  const formatMoney = (value: number) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-    }).format(value);
+  const formatMoney = (value: number) => fmtMoney(value);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;

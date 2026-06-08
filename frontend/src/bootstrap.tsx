@@ -8,6 +8,8 @@ import theme from "./theme";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { getDeploymentConfig } from "./api/endpoints";
+import { CountryConfigProvider, DEFAULT_CONFIG, setCountryConfig, type CountryConfig } from "./config/countryConfig";
 import "./i18n";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -31,21 +33,35 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <NotificationProvider>
-            <BrowserRouter basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </BrowserRouter>
-          </NotificationProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
-  </React.StrictMode>
-);
+async function bootstrap() {
+  let countryConfig: CountryConfig = DEFAULT_CONFIG;
+  try {
+    countryConfig = await getDeploymentConfig();
+    setCountryConfig(countryConfig);
+  } catch {
+    // Fall back to the default (Argentina) config if /config is unreachable.
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <CountryConfigProvider value={countryConfig}>
+              <NotificationProvider>
+                <BrowserRouter basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <AuthProvider>
+                    <App />
+                  </AuthProvider>
+                </BrowserRouter>
+              </NotificationProvider>
+            </CountryConfigProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </React.StrictMode>
+  );
+}
+
+bootstrap();

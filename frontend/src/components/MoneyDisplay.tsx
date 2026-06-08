@@ -1,5 +1,6 @@
 import React from "react";
 import { Typography } from "@mui/material";
+import { formatMoney } from "../config/countryConfig";
 
 interface MoneyDisplayProps {
   amount: number | string;
@@ -14,13 +15,7 @@ const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
   color,
   fontWeight,
 }) => {
-  const numericAmount = typeof amount === "string" ? parseFloat(amount) || 0 : amount;
-  const formatted = new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericAmount);
+  const formatted = formatMoney(amount);
 
   return (
     <Typography variant={variant} color={color} fontWeight={fontWeight} component="span">

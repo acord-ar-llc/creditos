@@ -19,9 +19,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { getKPIs, getDisbursementTrends, getCollectionTrends } from "../../api/endpoints";
+import { getKPIs, getDisbursementTrends, getCollectionTrends, getDelinquency } from "../../api/endpoints";
 import KPICard from "../../components/KPICard";
 import { useTranslation } from "react-i18next";
+import { formatMoney as fmtMoney } from "../../config/countryConfig";
 
 const AdminDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -40,8 +41,13 @@ const AdminDashboard: React.FC = () => {
     queryFn: getCollectionTrends,
   });
 
+  const { data: delinquency } = useQuery({
+    queryKey: ["admin-delinquency"],
+    queryFn: getDelinquency,
+  });
+
   const formatMoney = (amount: number) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+    fmtMoney(amount, { maximumFractionDigits: 0, minimumFractionDigits: 0 });
 
   const combinedTrends = (disbursementTrends || []).map((d, idx) => ({
     month: d.month,
@@ -128,6 +134,36 @@ const AdminDashboard: React.FC = () => {
               color="warning.main"
             />
           )}
+        </Grid>
+      </Grid>
+
+      <Typography variant="h6" gutterBottom>
+        {t("dashboard.delinquency")}
+      </Typography>
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} sm={4}>
+          <KPICard
+            icon={<WarningIcon sx={{ fontSize: 28 }} />}
+            label={t("dashboard.par30")}
+            value={formatMoney(delinquency?.par30 || 0)}
+            color="warning.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <KPICard
+            icon={<WarningIcon sx={{ fontSize: 28 }} />}
+            label={t("dashboard.par60")}
+            value={formatMoney(delinquency?.par60 || 0)}
+            color="warning.dark"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <KPICard
+            icon={<WarningIcon sx={{ fontSize: 28 }} />}
+            label={t("dashboard.par90")}
+            value={formatMoney(delinquency?.par90 || 0)}
+            color="error.main"
+          />
         </Grid>
       </Grid>
 

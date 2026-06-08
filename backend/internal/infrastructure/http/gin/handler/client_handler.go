@@ -260,6 +260,42 @@ func (h *ClientHandler) UpdateComments(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
 }
 
+// AdminUpdateClient godoc
+// @Summary Update all client data
+// @Description Admin updates any client field (name, DNI, CUIT, phone, address, etc.)
+// @Tags Admin Clients
+// @Accept json
+// @Produce json
+// @Param id path string true "Client UUID"
+// @Param request body dto.AdminUpdateClientRequest true "Client data"
+// @Success 200 {object} dto.ClientResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/clients/{id} [put]
+func (h *ClientHandler) AdminUpdateClient(c *gin.Context) {
+	adminID := c.MustGet("userID").(uuid.UUID)
+	clientID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid client ID"})
+		return
+	}
+	var req dto.AdminUpdateClientRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	client, err := h.clientService.AdminUpdateClient(
+		c.Request.Context(), adminID, clientID,
+		req.FirstName, req.LastName, req.DNI, req.CUIT,
+		req.Phone, req.Address, req.City, req.Province, req.Country, req.IsPEP,
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, dto.ToClientResponse(client, client.User.Email))
+}
+
 // BlockClient godoc
 // @Summary Block a client
 // @Description Blocks a client account, preventing them from performing operations

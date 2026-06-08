@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
@@ -263,12 +264,14 @@ func (h *AuthHandler) FirebaseLogin(c *gin.Context) {
 	}
 
 	if !user.IsActive {
+		log.Printf("FirebaseLogin: user %s is deactivated", user.Email)
 		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "account is deactivated"})
 		return
 	}
 
 	// Google OAuth sign-in is restricted to admins only
 	if verified.SignInProvider == "google.com" && !user.IsAdmin() {
+		log.Printf("FirebaseLogin: user %s (role=%s) attempted Google sign-in but is not admin", user.Email, user.Role)
 		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "Google sign-in is only available for administrators"})
 		return
 	}

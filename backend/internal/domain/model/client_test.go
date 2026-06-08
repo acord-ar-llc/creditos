@@ -112,7 +112,7 @@ func TestNewClient(t *testing.T) {
 			city:      "City",
 			province:  "Prov",
 			wantErr:   true,
-			errMsg:    "invalid DNI",
+			errMsg:    "invalid national ID",
 		},
 		{
 			name:      "invalid CUIT bad check digit",
@@ -127,7 +127,7 @@ func TestNewClient(t *testing.T) {
 			city:      "City",
 			province:  "Prov",
 			wantErr:   true,
-			errMsg:    "invalid CUIT",
+			errMsg:    "invalid tax ID",
 		},
 		{
 			name:      "underage client",
@@ -193,7 +193,7 @@ func TestNewClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := model.NewClient(
 				tt.userID, tt.firstName, tt.lastName, tt.dni, tt.cuit,
-				tt.dob, tt.phone, tt.address, tt.city, tt.province, "Argentina", tt.isPEP,
+				tt.dob, tt.phone, tt.address, tt.city, tt.province, "Argentina", tt.isPEP, "AR",
 			)
 			if tt.wantErr {
 				require.Error(t, err)
@@ -216,7 +216,7 @@ func TestNewClient(t *testing.T) {
 func TestClient_FullName(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false, "AR",
 	)
 	require.NoError(t, err)
 	assert.Equal(t, "Juan Perez", client.FullName())
@@ -225,7 +225,7 @@ func TestClient_FullName(t *testing.T) {
 func TestClient_Block(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false, "AR",
 	)
 	require.NoError(t, err)
 	assert.False(t, client.IsBlocked)
@@ -237,7 +237,7 @@ func TestClient_Block(t *testing.T) {
 func TestClient_Unblock(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false, "AR",
 	)
 	require.NoError(t, err)
 
@@ -251,7 +251,7 @@ func TestClient_Unblock(t *testing.T) {
 func TestClient_UpdateProfile(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false, "AR",
 	)
 	require.NoError(t, err)
 
@@ -271,7 +271,7 @@ func TestClient_UpdateProfile(t *testing.T) {
 func TestClient_SetMercadoPagoLink(t *testing.T) {
 	client, err := model.NewClient(
 		uuid.New(), "Juan", "Perez", validDNI(), validCUIT(),
-		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false,
+		validDOB(), "+541155551234", "Addr", "City", "Prov", "Argentina", false, "AR",
 	)
 	require.NoError(t, err)
 

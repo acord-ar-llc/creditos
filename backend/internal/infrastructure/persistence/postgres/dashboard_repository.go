@@ -6,6 +6,7 @@ import (
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/port"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -113,6 +114,62 @@ func (r *DashboardRepository) DelinquencyRates(ctx context.Context) (*port.Delin
 	}
 
 	return stats, nil
+}
+
+func (r *DashboardRepository) OverdueInstallments(ctx context.Context, offset, limit int) ([]port.OverdueInstallment, int64, error) {
+	now := time.Now()
+
+	base := r.db.WithContext(ctx).
+		Table("installments").
+		Joins("JOIN loans ON loans.id = installments.loan_id").
+		Joins("JOIN clients ON clients.id = loans.client_id").
+		Where("installments.status != ? AND installments.due_date < ?", model.InstallmentPaid, now)
+
+	var total int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	type row struct {
+		InstallmentID   uuid.UUID
+		LoanID          uuid.UUID
+		ClientID        uuid.UUID
+		FirstName       string
+		LastName        string
+		Number          int
+		DueDate         time.Time
+		TotalAmount     decimal.Decimal
+		RemainingAmount decimal.Decimal
+		Status          string
+	}
+	var rows []row
+	if err := base.
+		Select("installments.id as installment_id, loans.id as loan_id, clients.id as client_id, " +
+			"clients.first_name as first_name, clients.last_name as last_name, " +
+			"installments.number as number, installments.due_date as due_date, " +
+			"installments.total_amount as total_amount, installments.remaining_amount as remaining_amount, " +
+			"installments.status as status").
+		Order("installments.due_date ASC").
+		Offset(offset).Limit(limit).
+		Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]port.OverdueInstallment, len(rows))
+	for i, row := range rows {
+		result[i] = port.OverdueInstallment{
+			InstallmentID:   row.InstallmentID,
+			LoanID:          row.LoanID,
+			ClientID:        row.ClientID,
+			ClientName:      row.FirstName + " " + row.LastName,
+			Number:          row.Number,
+			DueDate:         row.DueDate,
+			TotalAmount:     row.TotalAmount,
+			RemainingAmount: row.RemainingAmount,
+			Status:          row.Status,
+		}
+	}
+	return result, total, nil
 }
 
 func (r *DashboardRepository) DisbursementTrend(ctx context.Context, from, to time.Time) ([]port.TrendPoint, error) {

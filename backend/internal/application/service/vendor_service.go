@@ -15,6 +15,7 @@ type VendorService struct {
 	vendorAccountRepo port.VendorAccountRepository
 	authService       port.AuthService
 	audit             *AuditService
+	country           string
 }
 
 func NewVendorService(
@@ -23,6 +24,7 @@ func NewVendorService(
 	vendorAccountRepo port.VendorAccountRepository,
 	authService port.AuthService,
 	audit *AuditService,
+	country string,
 ) *VendorService {
 	return &VendorService{
 		userRepo:          userRepo,
@@ -30,6 +32,7 @@ func NewVendorService(
 		vendorAccountRepo: vendorAccountRepo,
 		authService:       authService,
 		audit:             audit,
+		country:           country,
 	}
 }
 
@@ -53,7 +56,7 @@ func (s *VendorService) Register(ctx context.Context, email, password, businessN
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	vendor, err := model.NewVendor(user.ID, businessName, cuit, phone, address, city, province, country)
+	vendor, err := model.NewVendor(user.ID, businessName, cuit, phone, address, city, province, country, s.country)
 	if err != nil {
 		return nil, nil, err
 	}

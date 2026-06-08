@@ -131,6 +131,21 @@ type DashboardRepository interface {
 	DelinquencyRates(ctx context.Context) (*DelinquencyStats, error)
 	DisbursementTrend(ctx context.Context, from, to time.Time) ([]TrendPoint, error)
 	CollectionTrend(ctx context.Context, from, to time.Time) ([]TrendPoint, error)
+	OverdueInstallments(ctx context.Context, offset, limit int) ([]OverdueInstallment, int64, error)
+}
+
+// OverdueInstallment is a collections worklist row joining an overdue
+// installment with its loan and client.
+type OverdueInstallment struct {
+	InstallmentID   uuid.UUID
+	LoanID          uuid.UUID
+	ClientID        uuid.UUID
+	ClientName      string
+	Number          int
+	DueDate         time.Time
+	TotalAmount     decimal.Decimal
+	RemainingAmount decimal.Decimal
+	Status          string
 }
 
 type PortfolioSummary struct {

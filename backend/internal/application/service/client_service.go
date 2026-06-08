@@ -17,6 +17,7 @@ type ClientService struct {
 	accountRepo port.AccountRepository
 	authService port.AuthService
 	audit       *AuditService
+	country     string
 }
 
 func NewClientService(
@@ -25,6 +26,7 @@ func NewClientService(
 	accountRepo port.AccountRepository,
 	authService port.AuthService,
 	audit *AuditService,
+	country string,
 ) *ClientService {
 	return &ClientService{
 		userRepo:    userRepo,
@@ -32,6 +34,7 @@ func NewClientService(
 		accountRepo: accountRepo,
 		authService: authService,
 		audit:       audit,
+		country:     country,
 	}
 }
 
@@ -66,7 +69,7 @@ func (s *ClientService) Register(ctx context.Context, email, firstName, lastName
 		return nil, nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	client, err := model.NewClient(user.ID, firstName, lastName, dni, cuit, dob, phone, address, city, province, country, isPEP)
+	client, err := model.NewClient(user.ID, firstName, lastName, dni, cuit, dob, phone, address, city, province, country, isPEP, s.country)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -153,6 +156,19 @@ func (s *ClientService) UpdateComments(ctx context.Context, adminID, clientID uu
 		return nil, err
 	}
 	s.audit.Record(ctx, &adminID, "update_comments", "client", client.ID.String(), "Client comments updated")
+	return client, nil
+}
+
+func (s *ClientService) AdminUpdateClient(ctx context.Context, adminID, clientID uuid.UUID, firstName, lastName, dni, cuit, phone, address, city, province, country string, isPEP bool) (*model.Client, error) {
+	client, err := s.clientRepo.FindByID(ctx, clientID)
+	if err != nil {
+		return nil, err
+	}
+	client.AdminUpdate(firstName, lastName, dni, cuit, phone, address, city, province, country, isPEP)
+	if err := s.clientRepo.Update(ctx, client); err != nil {
+		return nil, err
+	}
+	s.audit.Record(ctx, &adminID, "admin_update_client", "client", client.ID.String(), fmt.Sprintf("Client %s updated by admin", client.FullName()))
 	return client, nil
 }
 

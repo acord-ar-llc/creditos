@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/application/dto"
 	"github.com/diogenes-moreira/creditos/backend/internal/application/service"
@@ -99,6 +100,51 @@ func (h *DashboardHandler) GetKPIs(c *gin.Context) {
 			DelinquencyRate: delinquency.DelinquencyRate.StringFixed(2),
 		},
 	})
+}
+
+// GetOverdueInstallments godoc
+// @Summary List overdue installments (collections worklist)
+// @Description Returns a paginated list of overdue installments with client and loan info
+// @Tags Dashboard
+// @Produce json
+// @Param offset query int false "Offset"
+// @Param limit query int false "Limit"
+// @Success 200 {object} dto.PaginatedResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Security BearerAuth
+// @Router /admin/collections/overdue [get]
+func (h *DashboardHandler) GetOverdueInstallments(c *gin.Context) {
+	var req dto.PaginationRequest
+	_ = c.ShouldBindQuery(&req)
+	if req.Limit <= 0 {
+		req.Limit = 20
+	}
+	items, total, err := h.dashboardService.GetOverdueInstallments(c.Request.Context(), req.Offset, req.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+	now := time.Now()
+	result := make([]dto.OverdueInstallmentResponse, len(items))
+	for i, it := range items {
+		days := int(now.Sub(it.DueDate).Hours() / 24)
+		if days < 0 {
+			days = 0
+		}
+		result[i] = dto.OverdueInstallmentResponse{
+			InstallmentID:   it.InstallmentID.String(),
+			LoanID:          it.LoanID.String(),
+			ClientID:        it.ClientID.String(),
+			ClientName:      it.ClientName,
+			Number:          it.Number,
+			DueDate:         it.DueDate.Format("2006-01-02"),
+			DaysOverdue:     days,
+			TotalAmount:     it.TotalAmount.StringFixed(2),
+			RemainingAmount: it.RemainingAmount.StringFixed(2),
+			Status:          it.Status,
+		}
+	}
+	c.JSON(http.StatusOK, dto.PaginatedResponse{Data: result, Total: total, Offset: req.Offset, Limit: req.Limit})
 }
 
 // GetDisbursementTrend godoc

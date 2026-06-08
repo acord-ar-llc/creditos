@@ -58,6 +58,19 @@ export interface UpdateProfileRequest {
   country: string;
 }
 
+export interface AdminUpdateClientRequest {
+  firstName: string;
+  lastName: string;
+  dni: string;
+  cuit: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  country: string;
+  isPEP: boolean;
+}
+
 export interface UpdateMercadoPagoRequest {
   alias: string;
   cvu: string;
@@ -235,6 +248,22 @@ export interface DelinquencySummary {
   delinquencyRate: number;
   overdueCount: number;
   totalOverdue: number;
+  par30: number;
+  par60: number;
+  par90: number;
+}
+
+export interface OverdueInstallment {
+  installmentId: string;
+  loanId: string;
+  clientId: string;
+  clientName: string;
+  number: number;
+  dueDate: string;
+  daysOverdue: number;
+  totalAmount: string;
+  remainingAmount: string;
+  status: string;
 }
 
 export interface KPIs {
