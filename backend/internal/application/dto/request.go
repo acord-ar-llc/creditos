@@ -15,10 +15,6 @@ type RegisterRequest struct {
 	IsPEP       bool   `json:"isPEP"`
 }
 
-type LoginRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
 type UpdateProfileRequest struct {
 	Phone    string `json:"phone"`
 	Address  string `json:"address"`

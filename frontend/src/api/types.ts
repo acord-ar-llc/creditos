@@ -1,8 +1,4 @@
 // ---- Auth ----
-export interface LoginRequest {
-  email: string;
-}
-
 export interface RegisterRequest {
   email: string;
   firstName: string;

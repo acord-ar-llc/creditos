@@ -29,7 +29,7 @@ import { useFirebaseGoogleAuth } from "../../firebase/useFirebaseGoogleAuth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, requestOTP, verifyOTP, firebaseLogin } = useAuth();
+  const { requestOTP, verifyOTP, firebaseLogin } = useAuth();
   const { t } = useTranslation();
   const { showError } = useNotification();
 
