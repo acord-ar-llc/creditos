@@ -21,13 +21,20 @@ import (
 const (
 	sectionAll     = "all"
 	sectionVendors = "vendors"
+	sectionAdmin   = "admin"
 )
 
 // only selects which part of the dataset to seed. The default seeds everything,
 // which is what a fresh environment needs. "vendors" seeds just the vendor module
 // on top of clients and credit lines that already exist, so an environment that is
 // only missing that module can be completed without duplicating its portfolio.
-var only = flag.String("only", sectionAll, "section to seed: all|vendors")
+var only = flag.String("only", sectionAll, "section to seed: all|vendors|admin")
+
+// adminEmail is the account granted administrator access by -only=admin. It exists
+// so a person can be given access to an environment without hand-editing the
+// database: Google sign-in is restricted to admins, and FirebaseLogin links the
+// Firebase UID to this row by email on the first successful sign-in.
+var adminEmail = flag.String("email", "", "email to grant admin access to (required by -only=admin)")
 
 func main() {
 	flag.Parse()
@@ -70,8 +77,10 @@ func main() {
 		seedVendors(db, 5, cfg.Country, cfg.DefaultIVARate)
 	case sectionVendors:
 		seedVendors(db, 5, cfg.Country, cfg.DefaultIVARate)
+	case sectionAdmin:
+		grantAdmin(db, *adminEmail)
 	default:
-		log.Fatalf("unknown -only value %q (expected %s or %s)", *only, sectionAll, sectionVendors)
+		log.Fatalf("unknown -only value %q (expected %s, %s or %s)", *only, sectionAll, sectionVendors, sectionAdmin)
 	}
 	log.Println("Seed completed successfully!")
 }
@@ -671,4 +680,41 @@ func vendorEmail(businessName, country string) string {
 	}
 	slug = strings.ReplaceAll(slug, " ", "-")
 	return fmt.Sprintf("contacto@%s.%s", slug, tld)
+}
+
+// grantAdmin gives an existing or new account administrator access.
+//
+// It is the supported way to let someone into an environment: Google sign-in is
+// restricted to administrators, and FirebaseLogin looks the user up by email and
+// links their real Firebase UID on first sign-in, so no credential has to be
+// created or shared here. Running it again on the same address is a no-op beyond
+// re-asserting the role.
+func grantAdmin(db *gorm.DB, email string) {
+	if email == "" {
+		log.Fatalf("-only=%s requires -email", sectionAdmin)
+	}
+	if !strings.Contains(email, "@") {
+		log.Fatalf("invalid email: %q", email)
+	}
+
+	var existing model.User
+	if err := db.Where("email = ?", email).First(&existing).Error; err == nil {
+		previous := existing.Role
+		existing.Role = model.RoleAdmin
+		existing.IsActive = true
+		if err := db.Save(&existing).Error; err != nil {
+			log.Fatalf("failed to grant admin to %s: %v", email, err)
+		}
+		log.Printf("Admin granted: %s (ID: %s, previous role: %s)", email, existing.ID, previous)
+		return
+	}
+
+	user, err := model.NewUser(uuid.New().String(), email, model.RoleAdmin)
+	if err != nil {
+		log.Fatalf("failed to build admin %s: %v", email, err)
+	}
+	if err := db.Create(user).Error; err != nil {
+		log.Fatalf("failed to create admin %s: %v", email, err)
+	}
+	log.Printf("Admin created: %s (ID: %s)", email, user.ID)
 }
