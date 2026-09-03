@@ -90,7 +90,10 @@
     "required": "Campo requerido",
     "invalidDni": "DNI inválido",
     "invalidPhone": "Teléfono inválido",
-    "invalidCvu": "CVU inválido"
+    "invalidCvu": "CVU inválido",
+    "invalidCuit": "Identificación tributaria inválida",
+    "locationRequired": "Seleccioná país, provincia y ciudad",
+    "loadingLocations": "Cargando ubicaciones…"
   },
   "nav": {
     "dashboard": "Panel",

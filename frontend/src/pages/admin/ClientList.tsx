@@ -15,19 +15,42 @@ import {
   FormControlLabel,
   Checkbox,
   Grid,
+  FormHelperText,
 } from "@mui/material";
 import { Search as SearchIcon, Add as AddIcon } from "@mui/icons-material";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { format } from "date-fns";
 import { adminGetClients, adminSearchClients, adminRegisterClient } from "../../api/endpoints";
 import DataTable, { Column } from "../../components/DataTable";
 import StatusBadge from "../../components/StatusBadge";
 import { useNotification } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../api/errorUtils";
-import type { Client, RegisterRequest } from "../../api/types";
+import type { Client } from "../../api/types";
 import LocationSelector from "../../components/LocationSelector";
 import { useCountryConfig, countryNameFor } from "../../config/countryConfig";
 
-const emptyForm: RegisterRequest = {
+// Mirrors the required fields of the backend RegisterRequest, so the dialog can
+// no longer submit a client the API will reject.
+const schema = z.object({
+  email: z.string().email(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  dni: z.string().min(6).max(11),
+  cuit: z.string().min(9).max(16),
+  dateOfBirth: z.string().min(1),
+  phone: z.string().min(8),
+  address: z.string().min(1),
+  country: z.string().min(1),
+  city: z.string().min(1),
+  province: z.string().min(1),
+  isPEP: z.boolean(),
+});
+
+type RegisterFormData = z.infer<typeof schema>;
+
+const emptyForm: RegisterFormData = {
   email: "", firstName: "", lastName: "",
   dni: "", cuit: "", dateOfBirth: "", phone: "",
   address: "", country: "Argentina", city: "", province: "", isPEP: false,
@@ -43,8 +66,17 @@ const ClientList: React.FC = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [formData, setFormData] = useState<RegisterRequest>({ ...emptyForm, country: countryNameFor(config.country) });
   const { showSuccess, showError } = useNotification();
+
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<RegisterFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { ...emptyForm, country: countryNameFor(config.country) },
+  });
+
+  const openRegister = () => {
+    reset({ ...emptyForm, country: countryNameFor(config.country) });
+    setRegisterOpen(true);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -68,7 +100,7 @@ const ClientList: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       setRegisterOpen(false);
-      setFormData({ ...emptyForm, country: countryNameFor(config.country) });
+      reset({ ...emptyForm, country: countryNameFor(config.country) });
       showSuccess(t("admin.clientCreated"));
     },
     onError: (err: unknown) => showError(getErrorMessage(err, t("admin.clientCreateError"))),
@@ -112,14 +144,11 @@ const ClientList: React.FC = () => {
   const rows = debouncedSearch ? (searchResults || []) : (clientsData?.data || []);
   const loading = debouncedSearch ? searchLoading : isLoading;
 
-  const updateField = (field: keyof RegisterRequest) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setFormData({ ...formData, [field]: e.target.value });
-
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4">{t("nav.clients")}</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setRegisterOpen(true)}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={openRegister}>
           {t("admin.registerClient")}
         </Button>
       </Box>
@@ -159,38 +188,72 @@ const ClientList: React.FC = () => {
         <DialogTitle>{t("admin.registerClient")}</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            <TextField label={t("auth.email")} type="email" value={formData.email} onChange={updateField("email")} />
+            <Controller name="email" control={control} render={({ field }) => (
+              <TextField {...field} type="email" label={t("auth.email")}
+                error={!!errors.email} helperText={errors.email ? t("validation.invalidEmail") : undefined} />
+            )} />
             <Box display="flex" gap={2}>
-              <TextField label={t("registration.firstName")} value={formData.firstName} onChange={updateField("firstName")} fullWidth />
-              <TextField label={t("registration.lastName")} value={formData.lastName} onChange={updateField("lastName")} fullWidth />
+              <Controller name="firstName" control={control} render={({ field }) => (
+                <TextField {...field} fullWidth label={t("registration.firstName")}
+                  error={!!errors.firstName} helperText={errors.firstName ? t("validation.required") : undefined} />
+              )} />
+              <Controller name="lastName" control={control} render={({ field }) => (
+                <TextField {...field} fullWidth label={t("registration.lastName")}
+                  error={!!errors.lastName} helperText={errors.lastName ? t("validation.required") : undefined} />
+              )} />
             </Box>
             <Box display="flex" gap={2}>
-              <TextField label={config.nationalIdLabel} value={formData.dni} onChange={updateField("dni")} fullWidth />
-              <TextField label={config.taxIdLabel} value={formData.cuit} onChange={updateField("cuit")} fullWidth />
+              <Controller name="dni" control={control} render={({ field }) => (
+                <TextField {...field} fullWidth label={config.nationalIdLabel}
+                  error={!!errors.dni} helperText={errors.dni ? t("validation.invalidDni") : undefined} />
+              )} />
+              <Controller name="cuit" control={control} render={({ field }) => (
+                <TextField {...field} fullWidth label={config.taxIdLabel}
+                  error={!!errors.cuit} helperText={errors.cuit ? t("validation.invalidCuit") : undefined} />
+              )} />
             </Box>
-            <TextField label={t("registration.dateOfBirth")} type="date" value={formData.dateOfBirth} onChange={updateField("dateOfBirth")} InputLabelProps={{ shrink: true }} />
-            <TextField label={t("registration.phone")} value={formData.phone} onChange={updateField("phone")} />
-            <TextField label={t("registration.address")} value={formData.address} onChange={updateField("address")} />
+            <Controller name="dateOfBirth" control={control} render={({ field }) => (
+              <TextField {...field} type="date" label={t("registration.dateOfBirth")} InputLabelProps={{ shrink: true }}
+                error={!!errors.dateOfBirth} helperText={errors.dateOfBirth ? t("validation.required") : undefined} />
+            )} />
+            <Controller name="phone" control={control} render={({ field }) => (
+              <TextField {...field} label={t("registration.phone")}
+                error={!!errors.phone} helperText={errors.phone ? t("validation.invalidPhone") : undefined} />
+            )} />
+            <Controller name="address" control={control} render={({ field }) => (
+              <TextField {...field} label={t("registration.address")}
+                error={!!errors.address} helperText={errors.address ? t("validation.required") : undefined} />
+            )} />
             <Grid container spacing={2}>
               <LocationSelector
-                country={formData.country}
-                province={formData.province}
-                city={formData.city}
-                onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+                country={watch("country")}
+                province={watch("province")}
+                city={watch("city")}
+                onChange={(field, value) => setValue(field, value, { shouldValidate: true })}
+                errors={{
+                  country: !!errors.country,
+                  province: !!errors.province,
+                  city: !!errors.city,
+                }}
               />
             </Grid>
-            <FormControlLabel
-              control={<Checkbox checked={formData.isPEP} onChange={(e) => setFormData({ ...formData, isPEP: e.target.checked })} />}
-              label={t("registration.isPEP")}
-            />
+            {(errors.country || errors.province || errors.city) && (
+              <FormHelperText error>{t("validation.locationRequired")}</FormHelperText>
+            )}
+            <Controller name="isPEP" control={control} render={({ field }) => (
+              <FormControlLabel
+                control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                label={t("registration.isPEP")}
+              />
+            )} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setRegisterOpen(false)}>{t("common.cancel")}</Button>
           <Button
             variant="contained"
-            onClick={() => registerMutation.mutate(formData)}
-            disabled={registerMutation.isPending || !formData.email || !formData.firstName || !formData.lastName || !formData.dni || !formData.cuit}
+            onClick={handleSubmit((data) => registerMutation.mutate(data))}
+            disabled={registerMutation.isPending}
           >
             {registerMutation.isPending ? t("common.creating") : t("common.create")}
           </Button>

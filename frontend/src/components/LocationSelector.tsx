@@ -59,11 +59,27 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     [geo, selectedCountry, selectedState]
   );
 
+  // While the geo dataset loads, keep the three fields on screen as disabled
+  // placeholders. Replacing them with a bare spinner hides which fields are still
+  // missing and lets the form be submitted without a province or city.
   if (!geo) {
     return (
-      <Grid item xs={12} sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-        <CircularProgress size={24} />
-      </Grid>
+      <>
+        {[t("registration.country"), t("registration.province"), t("registration.city")].map((label) => (
+          <Grid item xs={12} sm={4} key={label}>
+            <TextField
+              fullWidth
+              disabled
+              label={label}
+              value=""
+              placeholder={t("validation.loadingLocations")}
+              InputProps={{
+                endAdornment: <CircularProgress size={16} sx={{ mr: 1 }} />,
+              }}
+            />
+          </Grid>
+        ))}
+      </>
     );
   }
 
