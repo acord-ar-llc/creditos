@@ -76,52 +76,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login godoc
-// @Summary Authenticate a user (admin/vendor)
-// @Description Validates credentials and returns a JWT token for API access. For clients, use OTP flow instead.
-// @Tags Auth
-// @Accept json
-// @Produce json
-// @Param request body dto.LoginRequest true "Login credentials"
-// @Success 200 {object} dto.AuthResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 401 {object} dto.ErrorResponse
-// @Failure 403 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Router /auth/login [post]
-func (h *AuthHandler) Login(c *gin.Context) {
-	var req dto.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	user, err := h.userRepo.FindByEmail(c.Request.Context(), req.Email)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{Error: "invalid credentials"})
-		return
-	}
-
-	if !user.IsActive {
-		c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: "account is deactivated"})
-		return
-	}
-
-	token, err := h.authService.GenerateToken(user.FirebaseUID, user.Email, string(user.Role))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate token"})
-		return
-	}
-
-	user.RecordLogin()
-	_ = h.userRepo.Update(c.Request.Context(), user)
-
-	c.JSON(http.StatusOK, dto.AuthResponse{
-		Token: token,
-		User:  dto.ToUserResponse(user),
-	})
-}
-
 // RequestOTP godoc
 // @Summary Request an OTP code for client/vendor login
 // @Description Sends a 6-digit OTP code via email or signals phone OTP (sent client-side by Firebase)

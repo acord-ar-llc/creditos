@@ -1,7 +1,6 @@
 import apiClient from "./client";
 import { getCountryConfig, type CountryConfig } from "../config/countryConfig";
 import type {
-  LoginRequest,
   RegisterRequest,
   AuthResponse,
   RequestOTPRequest,
@@ -52,11 +51,6 @@ import type {
 } from "./types";
 
 // ==================== Auth ====================
-
-export const login = async (data: LoginRequest): Promise<AuthResponse> => {
-  const res = await apiClient.post("/auth/login", data);
-  return res.data;
-};
 
 export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
   const res = await apiClient.post("/auth/register", data);

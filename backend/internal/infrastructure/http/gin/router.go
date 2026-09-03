@@ -129,7 +129,6 @@ func (r *Router) setupRoutes(jwtSecret string) {
 
 	// Auth (public)
 	api.POST("/auth/register", authHandler.Register)
-	api.POST("/auth/login", authHandler.Login)
 	api.POST("/auth/request-otp", authHandler.RequestOTP)
 	api.POST("/auth/verify-otp", authHandler.VerifyOTP)
 	api.POST("/auth/firebase-login", authHandler.FirebaseLogin)

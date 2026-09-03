@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import type { User, LoginRequest, RegisterRequest } from "../api/types";
-import { login as apiLogin, register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP, firebaseLogin as apiFirebaseLogin } from "../api/endpoints";
+import type { User, RegisterRequest } from "../api/types";
+import { register as apiRegister, requestOTP as apiRequestOTP, verifyOTP as apiVerifyOTP, firebaseLogin as apiFirebaseLogin } from "../api/endpoints";
 
 interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   requestOTP: (email: string) => Promise<void>;
   verifyOTP: (email: string, code: string) => Promise<void>;
@@ -44,11 +43,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(response.user);
   }, []);
 
-  const login = useCallback(async (data: LoginRequest) => {
-    const response = await apiLogin(data);
-    handleAuthResponse(response);
-  }, [handleAuthResponse]);
-
   const register = useCallback(async (data: RegisterRequest) => {
     const response = await apiRegister(data);
     handleAuthResponse(response);
@@ -82,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!token,
         isLoading,
-        login,
         register,
         requestOTP,
         verifyOTP,
