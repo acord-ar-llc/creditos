@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/diogenes-moreira/creditos/backend/internal/domain/model"
@@ -16,7 +18,19 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	sectionAll     = "all"
+	sectionVendors = "vendors"
+)
+
+// only selects which part of the dataset to seed. The default seeds everything,
+// which is what a fresh environment needs. "vendors" seeds just the vendor module
+// on top of clients and credit lines that already exist, so an environment that is
+// only missing that module can be completed without duplicating its portfolio.
+var only = flag.String("only", sectionAll, "section to seed: all|vendors")
+
 func main() {
+	flag.Parse()
 	_ = godotenv.Load()
 	cfg := config.Load()
 	db, err := postgres.NewConnection(cfg.DB)
@@ -45,12 +59,20 @@ func main() {
 		log.Fatalf("Failed to migrate: %v", err)
 	}
 
-	log.Printf("Seeding database for country %s...", cfg.Country)
-	seedAdmins(db, cfg.Country)
-	clients := seedClients(db, 50, cfg.Country)
-	creditLines := seedCreditLines(db, clients, 30)
-	loans := seedLoans(db, clients, creditLines, 40, cfg.DefaultIVARate)
-	seedPayments(db, loans)
+	log.Printf("Seeding database for country %s (section: %s)...", cfg.Country, *only)
+	switch *only {
+	case sectionAll:
+		seedAdmins(db, cfg.Country)
+		clients := seedClients(db, 50, cfg.Country)
+		creditLines := seedCreditLines(db, clients, 30)
+		loans := seedLoans(db, clients, creditLines, 40, cfg.DefaultIVARate)
+		seedPayments(db, loans)
+		seedVendors(db, 5, cfg.Country, cfg.DefaultIVARate)
+	case sectionVendors:
+		seedVendors(db, 5, cfg.Country, cfg.DefaultIVARate)
+	default:
+		log.Fatalf("unknown -only value %q (expected %s or %s)", *only, sectionAll, sectionVendors)
+	}
 	log.Println("Seed completed successfully!")
 }
 
@@ -96,30 +118,33 @@ func seedAdmins(db *gorm.DB, country string) {
 }
 
 type countryDataset struct {
-	countryName string
-	phonePrefix string
-	firstNames  []string
-	lastNames   []string
-	provinces   []string
-	cities      []string
+	countryName   string
+	phonePrefix   string
+	firstNames    []string
+	lastNames     []string
+	provinces     []string
+	cities        []string
+	businessNames []string
 }
 
 var datasets = map[string]countryDataset{
 	"AR": {
-		countryName: "Argentina",
-		phonePrefix: "+5411",
-		firstNames:  []string{"Juan", "María", "Carlos", "Ana", "Luis", "Laura", "Pedro", "Sofía", "Diego", "Valentina", "Martín", "Camila", "Jorge", "Lucía", "Fernando", "Paula", "Ricardo", "Florencia", "Alejandro", "Julieta", "Roberto", "Daniela", "Sebastián", "Agustina", "Gabriel", "Antonella"},
-		lastNames:   []string{"González", "Rodríguez", "López", "Martínez", "García", "Fernández", "Pérez", "Sánchez", "Romero", "Torres", "Díaz", "Álvarez", "Ruiz", "Ramírez", "Flores", "Acosta", "Medina", "Herrera", "Suárez", "Castro", "Morales", "Ortiz", "Gutiérrez", "Silva", "Rojas", "Vega"},
-		provinces:   []string{"Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán", "Entre Ríos", "Salta", "Misiones", "Chaco", "Corrientes"},
-		cities:      []string{"Villanueva", "San Fernando", "Moreno", "Merlo", "Quilmes", "La Plata", "Tigre", "Pilar", "Campana", "Zárate"},
+		countryName:   "Argentina",
+		phonePrefix:   "+5411",
+		firstNames:    []string{"Juan", "María", "Carlos", "Ana", "Luis", "Laura", "Pedro", "Sofía", "Diego", "Valentina", "Martín", "Camila", "Jorge", "Lucía", "Fernando", "Paula", "Ricardo", "Florencia", "Alejandro", "Julieta", "Roberto", "Daniela", "Sebastián", "Agustina", "Gabriel", "Antonella"},
+		lastNames:     []string{"González", "Rodríguez", "López", "Martínez", "García", "Fernández", "Pérez", "Sánchez", "Romero", "Torres", "Díaz", "Álvarez", "Ruiz", "Ramírez", "Flores", "Acosta", "Medina", "Herrera", "Suárez", "Castro", "Morales", "Ortiz", "Gutiérrez", "Silva", "Rojas", "Vega"},
+		provinces:     []string{"Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán", "Entre Ríos", "Salta", "Misiones", "Chaco", "Corrientes"},
+		cities:        []string{"Villanueva", "San Fernando", "Moreno", "Merlo", "Quilmes", "La Plata", "Tigre", "Pilar", "Campana", "Zárate"},
+		businessNames: []string{"Electrodomésticos San Martín", "Muebles del Litoral", "Tecno Hogar Villanueva", "Indumentaria La Estrella", "Motos y Repuestos Quilmes", "Bazar Don Pedro", "Colchones y Sommiers Sur"},
 	},
 	"CO": {
-		countryName: "Colombia",
-		phonePrefix: "+57300",
-		firstNames:  []string{"Santiago", "Sofía", "Mateo", "Isabella", "Sebastián", "Valentina", "Andrés", "Camila", "Juan", "Mariana", "Carlos", "Daniela", "Felipe", "Valeria", "David", "Sara", "Nicolás", "Laura", "Samuel", "Gabriela", "Esteban", "Manuela", "Tomás", "Antonia", "Emanuel", "Salomé"},
-		lastNames:   []string{"Rodríguez", "Gómez", "González", "Martínez", "García", "López", "Hernández", "Ramírez", "Muñoz", "Rojas", "Moreno", "Jiménez", "Gutiérrez", "Vargas", "Castro", "Ortiz", "Ramos", "Suárez", "Rincón", "Cardona", "Cardenas", "Quintero", "Pineda", "Mejía", "Restrepo", "Ospina"},
-		provinces:   []string{"Cundinamarca", "Antioquia", "Valle del Cauca", "Atlántico", "Santander", "Bolívar", "Caldas", "Risaralda", "Tolima", "Boyacá"},
-		cities:      []string{"Bogotá", "Medellín", "Cali", "Barranquilla", "Bucaramanga", "Cartagena", "Manizales", "Pereira", "Ibagué", "Tunja"},
+		countryName:   "Colombia",
+		phonePrefix:   "+57300",
+		firstNames:    []string{"Santiago", "Sofía", "Mateo", "Isabella", "Sebastián", "Valentina", "Andrés", "Camila", "Juan", "Mariana", "Carlos", "Daniela", "Felipe", "Valeria", "David", "Sara", "Nicolás", "Laura", "Samuel", "Gabriela", "Esteban", "Manuela", "Tomás", "Antonia", "Emanuel", "Salomé"},
+		lastNames:     []string{"Rodríguez", "Gómez", "González", "Martínez", "García", "López", "Hernández", "Ramírez", "Muñoz", "Rojas", "Moreno", "Jiménez", "Gutiérrez", "Vargas", "Castro", "Ortiz", "Ramos", "Suárez", "Rincón", "Cardona", "Cardenas", "Quintero", "Pineda", "Mejía", "Restrepo", "Ospina"},
+		provinces:     []string{"Cundinamarca", "Antioquia", "Valle del Cauca", "Atlántico", "Santander", "Bolívar", "Caldas", "Risaralda", "Tolima", "Boyacá"},
+		cities:        []string{"Bogotá", "Medellín", "Cali", "Barranquilla", "Bucaramanga", "Cartagena", "Manizales", "Pereira", "Ibagué", "Tunja"},
+		businessNames: []string{"Electrodomésticos El Dorado", "Muebles Antioquia", "Tecno Hogar Chapinero", "Almacén La Estrella", "Motos y Repuestos Cali", "Bazar Don Pedro", "Colchones y Espumas Andes"},
 	},
 }
 
@@ -425,4 +450,225 @@ func seedPayments(db *gorm.DB, loans []model.Loan) {
 		db.Create(&log)
 	}
 	fmt.Println("Created 100 audit log entries")
+}
+
+// seedVendors creates vendor businesses, each with its current account and a few
+// credit-financed purchases, so the vendor module has something to show.
+//
+// Unlike the other seed sections it does not create clients or credit lines: it
+// draws on the approved credit lines already stored, which lets it complete an
+// environment whose portfolio is already populated without duplicating it.
+func seedVendors(db *gorm.DB, count int, country string, defaultIVARate float64) {
+	ds, ok := datasets[country]
+	if !ok {
+		ds = datasets["AR"]
+	}
+
+	// Only approved credit lines can finance a purchase.
+	var creditLines []model.CreditLine
+	if err := db.Where("status = ?", model.CreditLineApproved).Find(&creditLines).Error; err != nil {
+		log.Printf("Vendors: failed to load credit lines: %v", err)
+		return
+	}
+	if len(creditLines) == 0 {
+		log.Println("Vendors: no approved credit lines available — skipping purchases")
+	}
+
+	adminID := uuid.New()
+	clIdx := 0
+	created := 0
+
+	for i := 0; i < count && i < len(ds.businessNames); i++ {
+		businessName := ds.businessNames[i]
+		_, taxID := genIdentity(country)
+		city := ds.cities[rand.Intn(len(ds.cities))]
+		province := ds.provinces[rand.Intn(len(ds.provinces))]
+		email := vendorEmail(businessName, country)
+
+		var existing model.User
+		if db.Where("email = ?", email).First(&existing).Error == nil {
+			log.Printf("Vendor already exists, skipping: %s", email)
+			continue
+		}
+
+		user, err := model.NewUser(uuid.New().String(), email, model.RoleVendor)
+		if err != nil {
+			log.Printf("Vendor user %s: %v", email, err)
+			continue
+		}
+		user.Phone = fmt.Sprintf("%s%07d", ds.phonePrefix, rand.Intn(10000000))
+		if err := db.Create(user).Error; err != nil {
+			log.Printf("Vendor user create %s: %v", email, err)
+			continue
+		}
+
+		vendor, err := model.NewVendor(user.ID, businessName, taxID, user.Phone,
+			fmt.Sprintf("Av. %s %d", ds.lastNames[rand.Intn(len(ds.lastNames))], 100+rand.Intn(4900)),
+			city, province, ds.countryName, country)
+		if err != nil {
+			log.Printf("Vendor %s: %v", businessName, err)
+			continue
+		}
+		if err := db.Create(vendor).Error; err != nil {
+			log.Printf("Vendor create %s: %v", businessName, err)
+			continue
+		}
+
+		account := model.NewVendorAccount(vendor.ID)
+		if err := db.Create(account).Error; err != nil {
+			log.Printf("Vendor account %s: %v", businessName, err)
+			continue
+		}
+
+		// Two to four purchases per vendor, each financed by its own loan.
+		numPurchases := 2 + rand.Intn(3)
+		for p := 0; p < numPurchases && len(creditLines) > 0; p++ {
+			cl := &creditLines[clIdx%len(creditLines)]
+			clIdx++
+			if seedPurchase(db, vendor, account, cl, adminID, defaultIVARate) {
+				created++
+			}
+		}
+
+		log.Printf("Vendor created: %s (%s, balance %s)", businessName, email, account.Balance.StringFixed(2))
+	}
+
+	log.Printf("Created %d vendor purchases", created)
+}
+
+// seedPurchase records one credit-financed purchase against a credit line,
+// following the same domain flow as PurchaseService: the loan is requested,
+// approved and disbursed, and the sale is credited to the vendor's account.
+// It reports whether the purchase was recorded.
+func seedPurchase(db *gorm.DB, vendor *model.Vendor, account *model.VendorAccount, cl *model.CreditLine, adminID uuid.UUID, defaultIVARate float64) bool {
+	available := cl.AvailableAmount()
+	if !available.IsPositive() {
+		return false
+	}
+
+	// Spend a slice of what is left, so the line keeps some headroom.
+	amount := available.Mul(decimal.NewFromFloat(0.15 + rand.Float64()*0.35)).Round(2)
+	if err := cl.CanDisburse(amount); err != nil {
+		return false
+	}
+
+	numInst := []int{3, 6, 12}[rand.Intn(3)]
+	if numInst > cl.MaxInstallments {
+		numInst = cl.MaxInstallments
+	}
+	amortType := model.AmortizationFrench
+	if rand.Intn(3) == 0 {
+		amortType = model.AmortizationGerman
+	}
+
+	loan, err := model.NewLoan(cl.ClientID, cl.ID, amount, cl.InterestRate, numInst, amortType)
+	if err != nil {
+		log.Printf("Purchase loan: %v", err)
+		return false
+	}
+	if err := loan.RequestApproval(); err != nil {
+		log.Printf("Purchase loan approval request: %v", err)
+		return false
+	}
+	if err := loan.Approve(adminID); err != nil {
+		log.Printf("Purchase loan approve: %v", err)
+		return false
+	}
+
+	ivaRate := decimal.NewFromFloat(defaultIVARate)
+	var client model.Client
+	if db.First(&client, "id = ?", cl.ClientID).Error == nil && client.IVARate.IsPositive() {
+		ivaRate = client.IVARate
+	}
+
+	startDate := time.Now().AddDate(0, -(1 + rand.Intn(8)), 0)
+	installments, err := loan.Disburse(startDate, ivaRate)
+	if err != nil {
+		log.Printf("Purchase loan disburse: %v", err)
+		return false
+	}
+	loan.DisbursedAt = &startDate
+
+	// Settle instalments that already fell due, leaving some unpaid so the
+	// delinquency indicators have something to report.
+	for i := range installments {
+		if !installments[i].DueDate.Before(time.Now()) {
+			continue
+		}
+		if rand.Intn(5) == 0 {
+			installments[i].Status = model.InstallmentOverdue
+			continue
+		}
+		installments[i].PaidAmount = installments[i].TotalAmount
+		installments[i].RemainingAmount = decimal.NewFromInt(0)
+		installments[i].Status = model.InstallmentPaid
+		paidAt := installments[i].DueDate.Add(time.Duration(rand.Intn(5)) * 24 * time.Hour)
+		installments[i].PaidAt = &paidAt
+	}
+	if loan.CheckCompletion() {
+		_ = loan.Complete()
+	}
+
+	// Disburse already attached the schedule to the loan, so GORM persists the
+	// instalments together with it.
+	if err := db.Create(loan).Error; err != nil {
+		log.Printf("Purchase loan create: %v", err)
+		return false
+	}
+
+	cl.RecordDisbursement(amount)
+	if err := db.Save(cl).Error; err != nil {
+		log.Printf("Credit line update: %v", err)
+	}
+
+	description := purchaseDescriptions[rand.Intn(len(purchaseDescriptions))]
+	purchase, err := model.NewPurchase(vendor.ID, cl.ClientID, cl.ID, loan.ID, amount, description)
+	if err != nil {
+		log.Printf("Purchase: %v", err)
+		return false
+	}
+	purchase.CreatedAt = startDate
+	if err := db.Create(purchase).Error; err != nil {
+		log.Printf("Purchase create: %v", err)
+		return false
+	}
+
+	movement, err := account.Credit(amount, fmt.Sprintf("Sale: %s", description), purchase.ID.String())
+	if err != nil {
+		log.Printf("Vendor account credit: %v", err)
+		return false
+	}
+	movement.CreatedAt = startDate
+	if err := db.Save(account).Error; err != nil {
+		log.Printf("Vendor account update: %v", err)
+		return false
+	}
+	if err := db.Create(movement).Error; err != nil {
+		log.Printf("Vendor movement create: %v", err)
+	}
+
+	return true
+}
+
+var purchaseDescriptions = []string{
+	"Heladera no frost", "Lavarropas automático", "Smart TV 50\"", "Juego de living",
+	"Notebook", "Colchón y sommier", "Cocina a gas", "Aire acondicionado split",
+	"Bicicleta", "Microondas",
+}
+
+// vendorEmail derives a contact address from the business name so seeded vendors
+// are recognisable and stable across runs.
+func vendorEmail(businessName, country string) string {
+	tld := "com.ar"
+	if country == "CO" {
+		tld = "com.co"
+	}
+	slug := strings.ToLower(businessName)
+	for _, r := range []struct{ from, to string }{
+		{"á", "a"}, {"é", "e"}, {"í", "i"}, {"ó", "o"}, {"ú", "u"}, {"ñ", "n"}, {"\"", ""},
+	} {
+		slug = strings.ReplaceAll(slug, r.from, r.to)
+	}
+	slug = strings.ReplaceAll(slug, " ", "-")
+	return fmt.Sprintf("contacto@%s.%s", slug, tld)
 }
